@@ -4,10 +4,11 @@ import { useRef } from "react";
 import { motion, useInView } from "framer-motion";
 import SectionWrapper from "@/components/ui/SectionWrapper";
 import { arrowFlight, fadeUp, staggerContainer } from "@/lib/animations";
-
-const values = ["Iterate", "Adjust", "Repeat"];
+import EditableText from "@/components/ui/EditableText";
+import { useSiteContent } from "@/context/SiteContext";
 
 export default function About() {
+  const { content } = useSiteContent();
   const numRef = useRef<HTMLSpanElement>(null);
   const numInView = useInView(numRef, { once: true, margin: "-80px" });
 
@@ -31,9 +32,10 @@ export default function About() {
             </motion.span>
             <div className="flex items-center gap-3">
               <div className="w-8 h-px bg-gold" />
-              <span className="text-gold text-xs tracking-[0.3em] uppercase font-mono">
-                The Archer
-              </span>
+              <EditableText
+                path="about.label"
+                className="text-gold text-xs tracking-[0.3em] uppercase font-mono"
+              />
             </div>
           </motion.div>
 
@@ -46,38 +48,33 @@ export default function About() {
               variants={fadeUp}
               className="font-display font-bold text-3xl md:text-4xl lg:text-5xl text-white leading-tight"
             >
-              I know what I don&apos;t know.{" "}
-              <span className="text-gold-gradient">
-                I&apos;m methodical about closing that gap.
-              </span>
+              <EditableText path="about.heading" />{" "}
+              <EditableText path="about.headingHighlight" className="text-gold-gradient" />
             </motion.h2>
 
             <motion.p
               variants={fadeUp}
               className="text-white/60 text-lg md:text-xl leading-relaxed max-w-2xl"
             >
-              I started building things because I wanted to understand how they
-              worked. Not just use them. That impulse is still what drives me.
+              <EditableText path="about.body1" />
             </motion.p>
 
             <motion.p
               variants={fadeUp}
               className="text-white/50 text-base md:text-lg leading-relaxed max-w-2xl"
             >
-              I approach problems the way I approach archery: understand the
-              variables, control what you can, release with intention, and adjust
-              based on where it lands. I&apos;m not looking for a stage. I&apos;m
-              looking for a room where good thinking is valued.
+              <EditableText path="about.body2" />
             </motion.p>
 
             {/* Values */}
             <motion.div variants={fadeUp} className="pt-4 flex flex-wrap gap-6">
-              {values.map((value) => (
-                <div key={value} className="flex items-center gap-2">
+              {content.about.values.map((value, i) => (
+                <div key={i} className="flex items-center gap-2">
                   <div className="w-1.5 h-1.5 rounded-full bg-gold" />
-                  <span className="text-white/70 text-sm tracking-wide font-mono">
-                    {value}
-                  </span>
+                  <EditableText
+                    path={`about.values.${i}`}
+                    className="text-white/70 text-sm tracking-wide font-mono"
+                  />
                 </div>
               ))}
             </motion.div>

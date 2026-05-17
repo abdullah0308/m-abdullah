@@ -9,16 +9,23 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@payloadcms/db-postgres": "^3.84.1",
+    "@payloadcms/next": "^3.84.1",
+    "@payloadcms/richtext-lexical": "^3.84.1",
+    "@payloadcms/storage-vercel-blob": "^3.84.1",
     "framer-motion": "^12.38.0",
-    "next": "14.2.35",
-    "react": "^18",
-    "react-dom": "^18",
-    "resend": "^6.9.4"
+    "graphql": "^16.14.0",
+    "next": "^15.4.11",
+    "payload": "^3.84.1",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
+    "resend": "^6.9.4",
+    "sharp": "^0.34.5"
   },
   "devDependencies": {
     "@types/node": "^20",
-    "@types/react": "^18",
-    "@types/react-dom": "^18",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
     "eslint": "^8",
     "eslint-config-next": "14.2.35",
     "postcss": "^8",

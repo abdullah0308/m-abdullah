@@ -13,13 +13,13 @@ const PRINCIPLES = [
   {
     number: "02",
     title: "Systems over features",
-    body: "I'm more interested in how things connect than in any individual piece. Good code doesn't just work — it makes sense when someone else reads it at 11pm on a Tuesday.",
+    body: "I'm more interested in how things connect than in any individual piece. Good code doesn't just work. It makes sense when someone else reads it at 11pm on a Tuesday.",
     annotation: "anchor point: repeatable, not just reachable.",
   },
   {
     number: "03",
     title: "Honest iteration",
-    body: "I keep track of what didn't work. Not as failures — as data. Every deviation from the target tells you something true about your process.",
+    body: "I keep track of what didn't work. Not as failures, as data. Every deviation from the target tells you something true about your process.",
     annotation: "follow-through: what you do after the release matters too.",
   },
 ];

@@ -25,7 +25,7 @@ const MARKERS = [
   {
     distance: "40m",
     line1: "Understood that clean code is a form of communication.",
-    line2: "You're writing for the next person — often future you.",
+    line2: "You're writing for the next person, often future you.",
     center: 0.7,
   },
   {

@@ -1,8 +1,10 @@
 "use client";
 
 import { useRef } from "react";
-import Image from "next/image";
 import { motion, useScroll, useTransform } from "framer-motion";
+import EditableText from "@/components/ui/EditableText";
+import EditableImage from "@/components/ui/EditableImage";
+import { useSiteContent } from "@/context/SiteContext";
 
 const containerVariants = {
   hidden: {},
@@ -23,7 +25,6 @@ const itemVariants = {
   },
 };
 
-// Word-by-word reveal for tagline
 const taglineContainer = {
   hidden: {},
   visible: { transition: { staggerChildren: 0.08, delayChildren: 0.9 } },
@@ -38,6 +39,7 @@ const wordVariant = {
 };
 
 export default function Hero() {
+  const { content, isEditing } = useSiteContent();
   const containerRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -51,10 +53,7 @@ export default function Hero() {
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
   };
 
-  const taglineLines = [
-    "I don't aim for perfect.",
-    "I aim for better.",
-  ];
+  const taglineLines = content.hero.tagline;
 
   return (
     <section
@@ -66,8 +65,8 @@ export default function Hero() {
         <div className="w-full md:w-1/2 h-full bg-charcoal-deep flex-shrink-0" />
         <div className="hidden md:block relative flex-1 h-full overflow-hidden">
           <motion.div className="absolute inset-0" style={{ y: bgY }}>
-            <Image
-              src="/images/hero-bg.jpeg"
+            <EditableImage
+              path="hero.bgImage"
               alt="Abdullah Mohamed — Archer"
               fill
               priority
@@ -83,8 +82,8 @@ export default function Hero() {
 
       {/* Mobile image */}
       <div className="md:hidden absolute inset-0 z-0">
-        <Image
-          src="/images/hero-bg.jpeg"
+        <EditableImage
+          path="hero.bgImage"
           alt="Abdullah Mohamed — Archer"
           fill
           priority
@@ -109,9 +108,10 @@ export default function Hero() {
           {/* Pre-label */}
           <motion.div variants={itemVariants} className="flex items-center gap-3 mb-8">
             <div className="w-8 h-px bg-gold" />
-            <span className="text-gold text-xs tracking-[0.3em] uppercase font-mono">
-              Junior Developer · Mauritius
-            </span>
+            <EditableText
+              path="hero.label"
+              className="text-gold text-xs tracking-[0.3em] uppercase font-mono"
+            />
           </motion.div>
 
           {/* Name */}
@@ -119,43 +119,62 @@ export default function Hero() {
             variants={itemVariants}
             className="font-display font-bold leading-none mb-8"
           >
-            <span className="block text-5xl md:text-7xl lg:text-8xl text-white">
-              Abdullah
-            </span>
-            <span className="block text-5xl md:text-7xl lg:text-8xl text-gold-gradient gold-glow-text">
-              Mohamed
-            </span>
+            <EditableText
+              path="hero.firstName"
+              tag="span"
+              className="block text-5xl md:text-7xl lg:text-8xl text-white"
+            />
+            <EditableText
+              path="hero.lastName"
+              tag="span"
+              className="block text-5xl md:text-7xl lg:text-8xl text-gold-gradient gold-glow-text"
+            />
           </motion.h1>
 
-          {/* Tagline — word by word */}
-          <motion.div
-            variants={taglineContainer}
-            initial="hidden"
-            animate="visible"
-            className="mb-4"
-          >
-            {taglineLines.map((line, li) => (
-              <div key={li} className="flex flex-wrap gap-x-2 overflow-hidden mb-1">
-                {line.split(" ").map((word, wi) => (
-                  <motion.span
-                    key={wi}
-                    variants={wordVariant}
-                    className="text-xl md:text-2xl text-white/80 font-light tracking-wide"
-                  >
-                    {word}
-                  </motion.span>
-                ))}
-              </div>
-            ))}
-          </motion.div>
+          {/* Tagline */}
+          {isEditing ? (
+            <div className="mb-4 space-y-1">
+              <EditableText
+                path="hero.tagline.0"
+                tag="div"
+                className="text-xl md:text-2xl text-white/80 font-light tracking-wide"
+              />
+              <EditableText
+                path="hero.tagline.1"
+                tag="div"
+                className="text-xl md:text-2xl text-white/80 font-light tracking-wide"
+              />
+            </div>
+          ) : (
+            <motion.div
+              variants={taglineContainer}
+              initial="hidden"
+              animate="visible"
+              className="mb-4"
+            >
+              {taglineLines.map((line, li) => (
+                <div key={li} className="flex flex-wrap gap-x-2 overflow-hidden mb-1">
+                  {line.split(" ").map((word, wi) => (
+                    <motion.span
+                      key={wi}
+                      variants={wordVariant}
+                      className="text-xl md:text-2xl text-white/80 font-light tracking-wide"
+                    >
+                      {word}
+                    </motion.span>
+                  ))}
+                </div>
+              ))}
+            </motion.div>
+          )}
 
           {/* Subtext */}
           <motion.p
             variants={itemVariants}
             className="text-sm md:text-base text-white/40 max-w-md mb-10 leading-relaxed"
           >
-            I build things to understand how they work.{" "}
-            <span className="text-white/60">I&apos;m methodical about getting sharper.</span>
+            <EditableText path="hero.subtext" />{" "}
+            <EditableText path="hero.subtextHighlight" className="text-white/60" />
           </motion.p>
 
           {/* CTA Buttons */}
@@ -164,26 +183,16 @@ export default function Hero() {
               onClick={() => handleScroll("work")}
               className="group flex items-center gap-3 px-7 py-3.5 bg-gold text-charcoal-deep font-display font-semibold text-sm tracking-wide hover:bg-gold-light transition-all duration-200"
             >
-              Calibration Log
-              <svg
-                className="w-4 h-4 group-hover:translate-x-1 transition-transform"
-                viewBox="0 0 16 16"
-                fill="none"
-              >
-                <path
-                  d="M3 8h10M9 4l4 4-4 4"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
+              <EditableText path="hero.cta1" />
+              <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" viewBox="0 0 16 16" fill="none">
+                <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </button>
             <button
               onClick={() => handleScroll("contact")}
               className="px-7 py-3.5 bg-white/10 border border-white/60 text-white font-display font-medium text-sm tracking-wide hover:bg-gold-light hover:border-gold-light hover:text-charcoal-deep transition-all duration-200"
             >
-              Get in Touch
+              <EditableText path="hero.cta2" />
             </button>
           </motion.div>
         </motion.div>

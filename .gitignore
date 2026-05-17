@@ -38,3 +38,9 @@ yarn-error.log*
 next-env.d.ts
 
 .vercel
+
+# Payload CMS
+database.db
+database.db-journal
+/public/media
+payload-types.ts

@@ -65,10 +65,10 @@ function TargetSVG() {
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
-      <circle cx="300" cy="300" r="60" stroke="#e8e4dc" strokeWidth="1" />
-      <circle cx="300" cy="300" r="130" stroke="#e8e4dc" strokeWidth="1" />
-      <circle cx="300" cy="300" r="210" stroke="#e8e4dc" strokeWidth="1" />
-      <circle cx="300" cy="300" r="290" stroke="#e8e4dc" strokeWidth="1" />
+      <circle cx="300" cy="300" r="60" stroke="#ffffff" strokeWidth="1" />
+      <circle cx="300" cy="300" r="130" stroke="#ffffff" strokeWidth="1" />
+      <circle cx="300" cy="300" r="210" stroke="#ffffff" strokeWidth="1" />
+      <circle cx="300" cy="300" r="290" stroke="#ffffff" strokeWidth="1" />
     </svg>
   );
 }

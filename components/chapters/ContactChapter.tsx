@@ -72,7 +72,7 @@ export default function ContactChapter() {
             className="font-sans text-base leading-loose mb-3"
             style={{ color: "var(--color-muted)" }}
           >
-            I&apos;m currently open to junior developer roles —
+            I&apos;m currently open to junior developer roles,
             <br />
             especially in teams that value clean thinking,
             <br />
@@ -120,7 +120,7 @@ export default function ContactChapter() {
             className="font-mono text-xs text-center tracking-widest"
             style={{ color: "var(--color-muted)" }}
           >
-            Abdullah Mohamed — always calibrating.
+            Abdullah Mohamed, always calibrating.
           </p>
         </motion.div>
       </div>

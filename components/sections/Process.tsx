@@ -4,43 +4,15 @@ import { useRef } from "react";
 import { motion, useInView } from "framer-motion";
 import SectionWrapper from "@/components/ui/SectionWrapper";
 import { fadeUp, staggerContainer } from "@/lib/animations";
-
-const steps = [
-  {
-    phase: "Target",
-    step: "01",
-    description:
-      "Understand the problem. Define what good looks like. Identify what I don't know before I touch a single line.",
-  },
-  {
-    phase: "Aim",
-    step: "02",
-    description:
-      "Structure the approach. Research what I need. Plan before I build. A clear definition is worth more than three fast solutions.",
-  },
-  {
-    phase: "Draw",
-    step: "03",
-    description:
-      "Build with focus. Every decision serves a purpose. No feature without a reason.",
-  },
-  {
-    phase: "Release",
-    step: "04",
-    description:
-      "Ship, test, observe. The real feedback loop starts here. Not in the planning doc.",
-  },
-  {
-    phase: "Adjust",
-    step: "05",
-    description:
-      "Read where it landed. Improve from what actually happened, not what was assumed. Every deviation is data.",
-  },
-];
+import EditableText from "@/components/ui/EditableText";
+import { useSiteContent } from "@/context/SiteContext";
 
 export default function Process() {
+  const { content } = useSiteContent();
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
+
+  const steps = content.process.steps;
 
   return (
     <SectionWrapper id="process" className="bg-charcoal-deep overflow-hidden">
@@ -49,24 +21,24 @@ export default function Process() {
         <motion.div variants={staggerContainer} className="mb-20">
           <motion.div variants={fadeUp} className="flex items-center gap-3 mb-4">
             <div className="w-8 h-px bg-gold" />
-            <span className="text-gold text-xs tracking-[0.3em] uppercase font-mono">
-              How I Think
-            </span>
+            <EditableText
+              path="process.label"
+              className="text-gold text-xs tracking-[0.3em] uppercase font-mono"
+            />
           </motion.div>
           <motion.h2
             variants={fadeUp}
             className="font-display font-bold text-3xl md:text-4xl lg:text-5xl text-white max-w-xl"
           >
-            Every problem is a shot.
+            <EditableText path="process.heading" />
           </motion.h2>
           <motion.p variants={fadeUp} className="text-white/40 text-base mt-4 max-w-lg">
-            Deliberate, measured, and always followed by adjustment.
+            <EditableText path="process.subheading" />
           </motion.p>
         </motion.div>
 
         {/* Desktop timeline */}
         <div className="hidden lg:block">
-          {/* Animated line */}
           <div className="relative h-px w-full bg-white/5 mb-10">
             <motion.div
               className="absolute top-0 left-0 h-full bg-gradient-to-r from-gold/80 via-gold to-gold/40"
@@ -79,7 +51,6 @@ export default function Process() {
               }}
               style={{ transformOrigin: "left", width: "100%" }}
             />
-            {/* Arrow tip */}
             <motion.div
               className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2"
               initial={{ opacity: 0 }}
@@ -87,18 +58,11 @@ export default function Process() {
               transition={{ delay: 1.7, duration: 0.3 }}
             >
               <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                <path
-                  d="M0 5h8M5 1l4 4-4 4"
-                  stroke="#0C6170"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
+                <path d="M0 5h8M5 1l4 4-4 4" stroke="#00A7E1" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </motion.div>
           </div>
 
-          {/* Steps row */}
           <div className="grid grid-cols-5 gap-6">
             {steps.map((step, index) => (
               <motion.div
@@ -106,24 +70,25 @@ export default function Process() {
                 className="flex flex-col items-center text-center gap-4"
                 initial={{ opacity: 0, y: 20 }}
                 animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
-                transition={{
-                  duration: 0.5,
-                  ease: "easeOut",
-                  delay: 0.5 + index * 0.15,
-                }}
+                transition={{ duration: 0.5, ease: "easeOut", delay: 0.5 + index * 0.15 }}
               >
-                {/* Node — pulses when line reaches it */}
                 <motion.div
                   className="w-3 h-3 rounded-full border-2 border-gold bg-charcoal-deep flex-shrink-0 -mt-[22px] mb-2"
                   initial={{ scale: 0 }}
                   animate={isInView ? { scale: 1 } : { scale: 0 }}
                   transition={{ delay: 0.3 + index * 0.28, duration: 0.3, type: "spring", stiffness: 300 }}
                 />
-                <span className="text-white/30 text-xs tracking-widest font-mono">
-                  {step.step}
-                </span>
-                <h3 className="font-display font-bold text-white text-base">{step.phase}</h3>
-                <p className="text-white/40 text-xs leading-relaxed">{step.description}</p>
+                <span className="text-white/30 text-xs tracking-widest font-mono">{step.step}</span>
+                <EditableText
+                  path={`process.steps.${index}.phase`}
+                  tag="h3"
+                  className="font-display font-bold text-white text-base"
+                />
+                <EditableText
+                  path={`process.steps.${index}.description`}
+                  tag="p"
+                  className="text-white/40 text-xs leading-relaxed"
+                />
               </motion.div>
             ))}
           </div>
@@ -148,23 +113,23 @@ export default function Process() {
                 className="relative flex gap-6 items-start"
                 initial={{ opacity: 0, x: -20 }}
                 animate={isInView ? { opacity: 1, x: 0 } : { opacity: 0, x: -20 }}
-                transition={{
-                  duration: 0.5,
-                  ease: "easeOut",
-                  delay: 0.5 + index * 0.12,
-                }}
+                transition={{ duration: 0.5, ease: "easeOut", delay: 0.5 + index * 0.12 }}
               >
                 <div className="absolute -left-8 top-1 w-3 h-3 rounded-full border-2 border-gold bg-charcoal-deep flex-shrink-0" />
                 <div>
                   <div className="flex items-center gap-3 mb-2">
-                    <span className="text-gold/60 text-xs tracking-widest font-mono">
-                      {step.step}
-                    </span>
-                    <h3 className="font-display font-bold text-white text-lg">
-                      {step.phase}
-                    </h3>
+                    <span className="text-gold/60 text-xs tracking-widest font-mono">{step.step}</span>
+                    <EditableText
+                      path={`process.steps.${index}.phase`}
+                      tag="h3"
+                      className="font-display font-bold text-white text-lg"
+                    />
                   </div>
-                  <p className="text-white/50 text-sm leading-relaxed">{step.description}</p>
+                  <EditableText
+                    path={`process.steps.${index}.description`}
+                    tag="p"
+                    className="text-white/50 text-sm leading-relaxed"
+                  />
                 </div>
               </motion.div>
             ))}

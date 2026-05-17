@@ -68,7 +68,7 @@ export default function ArcherBeyond() {
           className="font-serif text-lg md:text-xl mt-6"
           style={{ color: "var(--color-text)", lineHeight: 1.9 }}
         >
-          Not because you&apos;re failing —
+          Not because you&apos;re failing,
           <br />
           but because precision is not a destination.
           <br />

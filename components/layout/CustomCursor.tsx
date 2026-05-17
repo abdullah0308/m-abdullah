@@ -66,19 +66,19 @@ export default function CustomCursor() {
         animate={{ scale: isPointer ? 1.5 : 1 }}
         transition={{ duration: 0.2, ease: "easeOut" }}
       >
-        <line x1="0" y1="16" x2="32" y2="16" stroke="#0C6170" strokeWidth="1" />
-        <line x1="16" y1="0" x2="16" y2="32" stroke="#0C6170" strokeWidth="1" />
-        <circle cx="16" cy="16" r="1.5" fill="#0C6170" />
+        <line x1="0" y1="16" x2="32" y2="16" stroke="#00A7E1" strokeWidth="1" />
+        <line x1="16" y1="0" x2="16" y2="32" stroke="#00A7E1" strokeWidth="1" />
+        <circle cx="16" cy="16" r="1.5" fill="#00A7E1" />
         <circle
           cx="16"
           cy="16"
           r="5"
           fill="none"
-          stroke="#0C6170"
+          stroke="#00A7E1"
           strokeWidth={isPointer ? "1.2" : "0.8"}
           opacity="0.9"
         />
-        <circle cx="16" cy="16" r="9" fill="none" stroke="#0C6170" strokeWidth="0.5" opacity="0.4" />
+        <circle cx="16" cy="16" r="9" fill="none" stroke="#00A7E1" strokeWidth="0.5" opacity="0.4" />
       </motion.svg>
     </motion.div>
   );

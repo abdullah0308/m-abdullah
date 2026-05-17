@@ -61,15 +61,11 @@ export default function Navigation() {
           className="flex items-center gap-3 group"
           aria-label="Go to top"
         >
-          <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-            <circle cx="14" cy="14" r="13" stroke="#0C6170" strokeWidth="1" opacity="0.3" />
-            <circle cx="14" cy="14" r="9" stroke="#0C6170" strokeWidth="1" opacity="0.5" />
-            <circle cx="14" cy="14" r="5" stroke="#0C6170" strokeWidth="1" opacity="0.8" />
-            <circle cx="14" cy="14" r="2" fill="#0C6170" />
-          </svg>
-          <span className="font-display font-bold text-white text-sm tracking-widest uppercase">
-            AM
-          </span>
+          <img
+            src="/images/AM Web Logo.svg"
+            alt="Abdullah Mohamed"
+            className="h-8 w-auto"
+          />
         </button>
 
         {/* Desktop links */}
