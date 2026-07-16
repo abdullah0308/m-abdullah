@@ -1,13 +1,16 @@
 /**
  * Unified build script.
  *
- * When STATIC_BUILD=true (Cloudflare Pages), it:
- *   1. Temporarily moves app/(payload) out of the app directory so Next.js
- *      static export never encounters Payload's dynamic route handlers.
- *   2. Runs `next build` with STATIC_BUILD=true to enable output:export mode.
- *   3. Restores app/(payload) in a finally block regardless of build outcome.
+ * When STATIC_BUILD=true (Cloudflare Pages), temporarily moves directories
+ * that contain dynamic/Node.js-only routes out of the Next.js app directory
+ * so the static export never sees them. Both directories are always restored
+ * in the finally block, even if the build fails.
  *
- * In all other environments, it runs `next build` normally.
+ * Directories hidden during static export:
+ *   - app/(payload)          — Payload CMS admin + REST API (Node.js only)
+ *   - app/(portfolio)/api    — Content editing API (force-dynamic, needs cookies)
+ *
+ * In all other environments, runs `next build` normally.
  */
 import { rename, access } from 'fs/promises'
 import { execSync } from 'child_process'
@@ -20,17 +23,23 @@ async function exists(p) {
 }
 
 if (process.env.STATIC_BUILD === 'true') {
-  const payloadDir = resolve(root, 'app/(payload)')
-  const payloadBak = resolve(root, 'app/_payload_bak')
-  let moved = false
+  const moves = [
+    { from: resolve(root, 'app/(payload)'),        to: resolve(root, 'app/_payload_bak') },
+    { from: resolve(root, 'app/(portfolio)/api'),  to: resolve(root, 'app/_api_bak') },
+  ]
+
+  const moved = []
   let failed = false
 
   try {
-    if (await exists(payloadDir)) {
-      await rename(payloadDir, payloadBak)
-      moved = true
-      console.log('[build] Moved app/(payload) out of static export path')
+    for (const { from, to } of moves) {
+      if (await exists(from)) {
+        await rename(from, to)
+        moved.push({ from, to })
+        console.log(`[build] Moved ${from.replace(root, '.')} out of build path`)
+      }
     }
+
     execSync('next build', {
       stdio: 'inherit',
       env: { ...process.env, STATIC_BUILD: 'true' },
@@ -39,9 +48,11 @@ if (process.env.STATIC_BUILD === 'true') {
     failed = true
     console.error('[build] Static build failed:', err.message ?? err)
   } finally {
-    if (moved && await exists(payloadBak)) {
-      await rename(payloadBak, payloadDir)
-      console.log('[build] Restored app/(payload)')
+    for (const { from, to } of moved) {
+      if (await exists(to)) {
+        await rename(to, from)
+        console.log(`[build] Restored ${from.replace(root, '.')}`)
+      }
     }
     if (failed) process.exit(1)
   }

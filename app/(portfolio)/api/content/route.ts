@@ -5,9 +5,7 @@ import { cookies } from 'next/headers'
 import { setPath } from '@/lib/contentUtils'
 import { defaultContent } from '@/lib/defaultContent'
 
-// Static export (CF Pages): serve defaultContent as a static JSON file.
-// Dynamic Node.js runtime: full Payload-backed read/write.
-export const dynamic = process.env.STATIC_BUILD === 'true' ? 'force-static' : 'force-dynamic'
+export const dynamic = 'force-dynamic'
 
 async function verifyToken(token: string): Promise<boolean> {
   try {
@@ -28,9 +26,6 @@ async function verifyToken(token: string): Promise<boolean> {
 }
 
 export async function GET() {
-  if (process.env.STATIC_BUILD === 'true') {
-    return NextResponse.json(defaultContent)
-  }
   try {
     const payload = await getPayload({ config })
     const global = await payload.findGlobal({ slug: 'site-content' })
@@ -41,9 +36,6 @@ export async function GET() {
 }
 
 export async function PATCH(req: NextRequest) {
-  if (process.env.STATIC_BUILD === 'true') {
-    return NextResponse.json({ error: 'Not available' }, { status: 404 })
-  }
   try {
     const cookieStore = await cookies()
     const token = cookieStore.get('payload-token')?.value
