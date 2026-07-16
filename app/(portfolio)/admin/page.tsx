@@ -36,6 +36,9 @@ async function getContent(): Promise<ContentData> {
 }
 
 export default async function AdminPage() {
+  // cookies() is not available in static export (Cloudflare Pages build)
+  if (process.env.STATIC_BUILD === 'true') return null;
+
   const cookieStore = await cookies()
   const token = cookieStore.get('payload-token')?.value
 

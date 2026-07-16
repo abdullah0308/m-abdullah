@@ -8,6 +8,11 @@ type Args = {
   searchParams: Promise<{ [key: string]: string | string[] }>
 }
 
+// Exclude Payload admin from static export (Cloudflare Pages)
+export function generateStaticParams() {
+  return [];
+}
+
 export const generateMetadata = ({ params, searchParams }: Args): Promise<Metadata> =>
   generatePageMetadata({ config, params, searchParams })
 
