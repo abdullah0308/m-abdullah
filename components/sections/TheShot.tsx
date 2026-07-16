@@ -14,11 +14,11 @@ import {
 // Constants
 // ---------------------------------------------------------------------------
 
-const ACCENT = "#00A7E1";
+const ACCENT = "#50E8F4";
 const TEXT = "#FFFFFF";
-const MUTED = "#5B7FA6";
-const BG = "#000000";
-const LINE_COLOR = "rgba(255,255,255,0.06)";
+const MUTED = "#5bc4cc";
+const BG = "#001619";
+const LINE_COLOR = "rgba(80,232,244,0.07)";
 
 const STAGES = [
   {

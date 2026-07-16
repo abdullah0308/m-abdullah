@@ -1,7 +1,7 @@
 import Hero from "@/components/sections/Hero";
 import About from "@/components/sections/About";
 import Process from "@/components/sections/Process";
-import Work from "@/components/sections/Work";
+import Skills from "@/components/sections/Skills";
 import Archery from "@/components/sections/Archery";
 import Contact from "@/components/sections/Contact";
 import { SiteProvider } from "@/context/SiteContext";
@@ -28,7 +28,7 @@ export default async function Home() {
       <Hero />
       <About />
       <Process />
-      <Work />
+      <Skills />
       <Archery />
       <Contact />
     </SiteProvider>

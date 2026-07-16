@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { motion, useMotionValue, useSpring } from "framer-motion";
+import { motion, useMotionValue } from "framer-motion";
 
 export default function CustomCursor() {
   const mouseX = useMotionValue(-100);
@@ -10,11 +10,7 @@ export default function CustomCursor() {
   const [isVisible, setIsVisible] = useState(false);
   const [isMouse, setIsMouse] = useState(false);
 
-  const springX = useSpring(mouseX, { stiffness: 500, damping: 40, mass: 0.5 });
-  const springY = useSpring(mouseY, { stiffness: 500, damping: 40, mass: 0.5 });
-
   useEffect(() => {
-    // maxTouchPoints === 0 is the most reliable cross-browser way to rule out touch devices
     const noTouch = navigator.maxTouchPoints === 0;
     if (!noTouch) return;
 
@@ -55,30 +51,47 @@ export default function CustomCursor() {
   return (
     <motion.div
       className="fixed top-0 left-0 z-[9999] pointer-events-none"
-      style={{ x: springX, y: springY }}
+      style={{ x: mouseX, y: mouseY }}
       animate={{ opacity: isVisible ? 1 : 0 }}
-      transition={{ opacity: { duration: 0.2 } }}
+      transition={{ opacity: { duration: 0.15 } }}
     >
       <motion.svg
         width="32"
         height="32"
         viewBox="0 0 32 32"
         animate={{ scale: isPointer ? 1.5 : 1 }}
-        transition={{ duration: 0.2, ease: "easeOut" }}
+        transition={{ duration: 0.15, ease: "easeOut" }}
       >
-        <line x1="0" y1="16" x2="32" y2="16" stroke="#00A7E1" strokeWidth="1" />
-        <line x1="16" y1="0" x2="16" y2="32" stroke="#00A7E1" strokeWidth="1" />
-        <circle cx="16" cy="16" r="1.5" fill="#00A7E1" />
+        {/* Crosshair lines */}
+        <line x1="0" y1="16" x2="32" y2="16" stroke="#50E8F4" strokeWidth="0.8" opacity="0.7" />
+        <line x1="16" y1="0" x2="16" y2="32" stroke="#50E8F4" strokeWidth="0.8" opacity="0.7" />
+        {/* Center dot */}
+        <circle cx="16" cy="16" r="1.2" fill="#C7F8FE" />
+        {/* Inner ring */}
         <circle
-          cx="16"
-          cy="16"
-          r="5"
+          cx="16" cy="16" r="5"
           fill="none"
-          stroke="#00A7E1"
+          stroke="#50E8F4"
           strokeWidth={isPointer ? "1.2" : "0.8"}
           opacity="0.9"
         />
-        <circle cx="16" cy="16" r="9" fill="none" stroke="#00A7E1" strokeWidth="0.5" opacity="0.4" />
+        {/* Outer ring */}
+        <circle
+          cx="16" cy="16" r="10"
+          fill="none"
+          stroke="#50E8F4"
+          strokeWidth="0.4"
+          opacity="0.3"
+        />
+        {/* Corner ticks */}
+        <line x1="5"  y1="5"  x2="8"  y2="5"  stroke="#50E8F4" strokeWidth="0.8" opacity="0.5" />
+        <line x1="5"  y1="5"  x2="5"  y2="8"  stroke="#50E8F4" strokeWidth="0.8" opacity="0.5" />
+        <line x1="27" y1="5"  x2="24" y2="5"  stroke="#50E8F4" strokeWidth="0.8" opacity="0.5" />
+        <line x1="27" y1="5"  x2="27" y2="8"  stroke="#50E8F4" strokeWidth="0.8" opacity="0.5" />
+        <line x1="5"  y1="27" x2="8"  y2="27" stroke="#50E8F4" strokeWidth="0.8" opacity="0.5" />
+        <line x1="5"  y1="27" x2="5"  y2="24" stroke="#50E8F4" strokeWidth="0.8" opacity="0.5" />
+        <line x1="27" y1="27" x2="24" y2="27" stroke="#50E8F4" strokeWidth="0.8" opacity="0.5" />
+        <line x1="27" y1="27" x2="27" y2="24" stroke="#50E8F4" strokeWidth="0.8" opacity="0.5" />
       </motion.svg>
     </motion.div>
   );

@@ -1,0 +1,46 @@
+# Abdullah Mohamed
+
+> Web developer based in Mauritius, building fast, modern websites and web applications.
+
+Abdullah Mohamed is a web developer and digital craftsman based in Mauritius. He designs and builds websites and web applications using Next.js, React, Tailwind CSS, JavaScript, and TypeScript. He also designs in Figma before writing a single line of code. Outside of development, he is a competitive archery athlete — an approach to precision that carries into his work.
+
+## What He Does
+
+Abdullah builds websites for clients and companies in Mauritius and beyond. His services include:
+
+- Website design (Figma prototypes, UI/UX)
+- Frontend development (React, Next.js, Tailwind CSS)
+- Full-stack web applications (Next.js App Router, server components, CMS integration)
+- Portfolio websites, business websites, landing pages
+
+## Skills & Tools
+
+- **Figma** — design systems, UI prototyping, auto layout
+- **HTML5** — semantic markup, accessibility, SEO structure
+- **CSS / Tailwind CSS** — responsive design, animations, custom properties
+- **JavaScript / TypeScript** — ES2022+, async/await, REST APIs
+- **Next.js** — App Router, server components, SSR, SSG, Vercel deployment
+
+## Background
+
+He is based in Mauritius and works at MetaBox Technology. He describes his approach as methodical: prototype in Figma, iterate in code, ship when it's right. His archery discipline — steady aim, calibrated release — informs how he approaches design and engineering problems.
+
+## Contact
+
+- Website: https://abdullahmohamed.dev
+- Company: MetaBox Technology, Mauritius
+- Location: Mauritius
+
+## Frequently Asked Questions
+
+**Who is Abdullah Mohamed?**
+Abdullah Mohamed is a web developer based in Mauritius who builds modern websites and web applications.
+
+**Is Abdullah Mohamed available for freelance web development in Mauritius?**
+Yes. Abdullah takes on web development projects through MetaBox Technology and directly. He builds websites for clients in Mauritius.
+
+**What technologies does Abdullah Mohamed use?**
+He works primarily with Next.js, React, Tailwind CSS, JavaScript, TypeScript, and Figma. He deploys on Vercel.
+
+**What kind of websites does Abdullah Mohamed build?**
+Business websites, portfolio websites, landing pages, and full-stack web applications.

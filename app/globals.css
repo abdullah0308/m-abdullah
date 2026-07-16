@@ -3,16 +3,17 @@
 @tailwind utilities;
 
 :root {
-  --gold: #00A7E1;
-  --charcoal: #1A1A1A;
-  --surface: #0D1623;
+  --gold: #50E8F4;
+  --gold-light: #C7F8FE;
+  --charcoal: #001619;
+  --surface: #001f24;
 
-  --color-bg: #000000;
+  --color-bg: #001619;
   --color-text: #FFFFFF;
-  --color-muted: #5B7FA6;
-  --color-line: rgba(255, 255, 255, 0.07);
-  --color-surface: #0B1520;
-  --color-accent: #00A7E1;
+  --color-muted: #5bc4cc;
+  --color-line: rgba(80, 232, 244, 0.07);
+  --color-surface: #001f24;
+  --color-accent: #50E8F4;
 }
 
 /* cursor:none applied only when JS confirms a true mouse device */
@@ -23,44 +24,47 @@
 
 html {
   scroll-behavior: smooth;
-  background-color: #000000;
+  background-color: #001619;
 }
 
 body {
-  background-color: #000000;
+  background-color: #001619;
   color: #FFFFFF;
-  font-family: var(--font-inter), system-ui, sans-serif;
+  font-family: var(--font-langits), var(--font-yapari), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 ::selection {
-  background: rgba(0, 167, 225, 0.2);
-  color: #48ACF0;
+  background: rgba(80, 232, 244, 0.2);
+  color: #C7F8FE;
 }
 
 ::-webkit-scrollbar {
   width: 3px;
 }
 ::-webkit-scrollbar-track {
-  background: #000000;
+  background: #001619;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(0, 167, 225, 0.4);
+  background: rgba(80, 232, 244, 0.4);
   border-radius: 2px;
 }
 
 @layer utilities {
   .text-gold-gradient {
-    background: linear-gradient(135deg, #00A7E1, #48ACF0);
+    background: linear-gradient(135deg, #50E8F4, #C7F8FE);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
   .border-gold-glow {
-    box-shadow: 0 0 20px rgba(0, 167, 225, 0.15);
+    box-shadow: 0 0 20px rgba(80, 232, 244, 0.15);
   }
   .gold-glow-text {
-    text-shadow: 0 0 40px rgba(0, 167, 225, 0.3);
+    text-shadow: 0 0 40px rgba(80, 232, 244, 0.3);
+  }
+  .font-after {
+    font-family: var(--font-after), var(--font-space-grotesk), system-ui, sans-serif;
   }
 }

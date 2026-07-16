@@ -13,7 +13,7 @@ interface Particle {
   color: string;
 }
 
-const COLORS = ["#00A7E1", "#48ACF0", "#1D4E89", "#ffffff"];
+const COLORS = ["#50E8F4", "#C7F8FE", "#027a82", "#ffffff"];
 
 function createParticle(width: number, height: number): Particle {
   const color = COLORS[Math.floor(Math.random() * COLORS.length)];

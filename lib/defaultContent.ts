@@ -6,9 +6,9 @@ export const defaultContent = {
     tagline: ["I don't aim for perfect.", "I aim for better."],
     subtext: "I build things to understand how they work.",
     subtextHighlight: "I'm methodical about getting sharper.",
-    cta1: "Calibration Log",
+    cta1: "My Skills",
     cta2: "Get in Touch",
-    bgImage: "/images/hero-bg.jpeg",
+    bgImage: "/images/AM.png",
   },
   about: {
     label: "The Archer",
@@ -41,7 +41,7 @@ export const defaultContent = {
         description: "Built a WooCommerce store from scratch. Product pages, cart, checkout, payment. The plugin handles a lot but you still have to know what you're doing.",
         adjustment: "Performance on WooCommerce takes real work. Test with real data early, not at the end.",
         tags: ["WordPress", "WooCommerce", "PHP"],
-        accent: "from-[#00A7E1]/20 via-[#00A7E1]/10 to-charcoal-deep",
+        accent: "from-[#50E8F4]/15 via-[#50E8F4]/8 to-charcoal-deep",
       },
       {
         number: "02",
@@ -50,7 +50,7 @@ export const defaultContent = {
         description: "Built in Next.js with Payload as the CMS. Developers can actually work with Payload without things falling apart. Good fit for structured content.",
         adjustment: "Content modeling matters more than the design does. You find that out after the first content migration.",
         tags: ["Next.js", "Payload CMS", "TypeScript"],
-        accent: "from-zinc-700/20 via-slate-800/30 to-charcoal-deep",
+        accent: "from-teal-900/30 via-slate-900/30 to-charcoal-deep",
       },
       {
         number: "03",
@@ -59,7 +59,7 @@ export const defaultContent = {
         description: "Built a web app to track training sessions, log arrow groupings, and spot patterns over time. Scratched my own itch. Turned out harder than expected to design for a sport you're also practicing.",
         adjustment: "Being the user and the developer at the same time is useful. You can't lie to yourself about what's confusing.",
         tags: ["Next.js", "TypeScript", "PostgreSQL"],
-        accent: "from-[#00A7E1]/15 via-[#00A7E1]/8 to-charcoal-deep",
+        accent: "from-[#50E8F4]/12 via-[#50E8F4]/6 to-charcoal-deep",
       },
       {
         number: "04",
@@ -68,7 +68,7 @@ export const defaultContent = {
         description: "Sites in multiple languages for clients operating across different markets. More decisions at the content and structure level than I expected going in.",
         adjustment: "Translation is not just text. Structure, navigation, and content relationships all have to work in every language.",
         tags: ["WordPress", "WPML", "PHP"],
-        accent: "from-[#00A7E1]/20 via-[#00A7E1]/10 to-charcoal-deep",
+        accent: "from-[#50E8F4]/15 via-[#50E8F4]/8 to-charcoal-deep",
       },
     ],
   },
@@ -77,7 +77,7 @@ export const defaultContent = {
     heading: "Beyond the screen. Discipline in motion.",
     quote: "Precision is not a destination. It's a practice.",
     quoteBody: "You can repeat the same shot a thousand times and still find room to improve it. Not because you're failing. Because that's how mastery actually works. That's how I approach building. Not to be done. To be better.",
-    imageLeft: "/images/archery-full.jpeg",
+    imageLeft: "/images/hero-bg.jpeg",
     imageRight: "/images/archery-aim.jpeg",
   },
   contact: {
