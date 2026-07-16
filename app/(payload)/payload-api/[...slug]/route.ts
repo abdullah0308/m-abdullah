@@ -10,6 +10,10 @@ import config from '@payload-config'
 // Required for next output: export (Cloudflare Pages static build)
 export const dynamic = 'force-static'
 
+export function generateStaticParams() {
+  return []
+}
+
 const notAvailable = () => new Response(null, { status: 404 })
 const isStatic = process.env.STATIC_BUILD === 'true'
 
