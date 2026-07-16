@@ -8,6 +8,17 @@ const nextConfig = {
   images: {
     formats: ['image/avif', 'image/webp'],
     ...(isStaticBuild && { unoptimized: true }),
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'cdn.jsdelivr.net',
+        pathname: '/gh/devicons/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+      },
+    ],
   },
 }
 

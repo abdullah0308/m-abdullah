@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import Image from "next/image";
 import SectionWrapper from "@/components/ui/SectionWrapper";
 import RevealText from "@/components/ui/RevealText";
 
@@ -206,9 +207,11 @@ export default function Skills() {
                       {/* Top row */}
                       <div className="flex items-start justify-between">
                         <span className="font-mono text-[10px] text-white/20">{skill.index}</span>
-                        <img
+                        <Image
                           src={skill.logo}
                           alt={skill.name}
+                          width={40}
+                          height={40}
                           className="w-10 h-10 object-contain"
                           style={skill.logoFilter ? { filter: skill.logoFilter } : undefined}
                           draggable={false}
@@ -278,7 +281,7 @@ export default function Skills() {
                 {/* Row header */}
                 <div className="relative z-10 flex items-center gap-4 px-6 py-5">
                   <span className="font-mono text-[10px] text-white/25 w-5">{skill.index}</span>
-                  <img src={skill.logo} alt={skill.name} className="w-7 h-7 object-contain" style={skill.logoFilter ? { filter: skill.logoFilter } : undefined} draggable={false} />
+                  <Image src={skill.logo} alt={skill.name} width={28} height={28} className="w-7 h-7 object-contain" style={skill.logoFilter ? { filter: skill.logoFilter } : undefined} draggable={false} />
                   <span className="font-title text-xl text-white flex-1">{skill.name}</span>
                   <motion.span
                     animate={{ rotate: isOpen ? 45 : 0 }}

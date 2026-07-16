@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import Image from "next/image";
 
 /* ── Archery-themed icon set ── */
 const IconAbout = () => (
@@ -121,7 +122,7 @@ export default function Navigation() {
             className="relative flex items-center justify-center shrink-0 w-[84px] h-full group"
             aria-label="Go to top"
           >
-            <img src="/images/AM Web Logo.svg" alt="AM" className="h-7 w-auto transition-opacity duration-200 group-hover:opacity-70" />
+            <Image src="/images/AM Web Logo.svg" alt="AM" width={40} height={28} className="h-7 w-auto transition-opacity duration-200 group-hover:opacity-70" />
           </button>
 
           {/* Left separator */}
@@ -193,7 +194,7 @@ export default function Navigation() {
             style={{ background: "radial-gradient(ellipse at left center, rgba(80,232,244,0.2) 0%, transparent 75%)", borderRadius: "9999px 0 0 9999px" }} />
 
           <button onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} className="shrink-0">
-            <img src="/images/AM Web Logo.svg" alt="AM" className="h-6 w-auto" />
+            <Image src="/images/AM Web Logo.svg" alt="AM" width={36} height={24} className="h-6 w-auto" />
           </button>
 
           {/* Hamburger */}

@@ -41,10 +41,6 @@ export default function Hero() {
   const contentY = useTransform(scrollYProgress, [0, 1], ["0%", "8%"]);
   const opacity  = useTransform(scrollYProgress, [0, 0.55], [1, 0]);
 
-  const handleScroll = (id: string) => {
-    document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
-  };
-
   // GSAP: "Abdullah" char-by-char + "Mohamed" whole-line clip reveal
   useEffect(() => {
     const first = firstNameRef.current;
