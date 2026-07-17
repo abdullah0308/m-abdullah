@@ -1,13 +1,11 @@
 import { withPayload } from '@payloadcms/next/withPayload'
 
-const isStaticBuild = process.env.STATIC_BUILD === 'true'
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  ...(isStaticBuild && { output: 'export' }),
+  output: 'export',
   images: {
+    unoptimized: true,
     formats: ['image/avif', 'image/webp'],
-    ...(isStaticBuild && { unoptimized: true }),
     remotePatterns: [
       {
         protocol: 'https',
