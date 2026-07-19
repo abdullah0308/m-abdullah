@@ -164,7 +164,7 @@ export default function Hero() {
               fill
               priority
               quality={95}
-              className="object-contain object-bottom scale-[1.22] origin-bottom"
+              className="object-contain object-bottom scale-[1.05] origin-bottom"
               sizes="100vw"
             />
             {/* Soft top fade — blends head into text area */}
