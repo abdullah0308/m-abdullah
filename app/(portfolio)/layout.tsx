@@ -115,11 +115,13 @@ export const metadata: Metadata = {
     images: ["/images/og-image.jpeg"],
   },
 
+  // Favicon source of truth: public/favicon.svg — swap it and run `npm run favicons`
   icons: {
     icon: [
-      { url: "/icon.svg", type: "image/svg+xml" },
-      { url: "/favicon.ico", type: "image/x-icon" },
+      { url: "/favicon.svg", type: "image/svg+xml" },
+      { url: "/favicon.ico", sizes: "48x48 32x32 16x16", type: "image/x-icon" },
     ],
+    apple: "/apple-touch-icon.png",
   },
 };
 
@@ -215,7 +217,13 @@ export default function RootLayout({
         <WebGLBackground />
         <CustomCursor />
         <Navigation />
-        <main>{children}</main>
+        {/*
+          relative + z-10: without an explicit stacking context, section
+          content can fail to paint above the fixed WebGL background canvas
+          (a compositor quirk with its continuous rAF redraw) — confirmed by
+          disappearing text in the Process section that was fixed by this.
+        */}
+        <main className="relative z-10">{children}</main>
       </body>
     </html>
   );

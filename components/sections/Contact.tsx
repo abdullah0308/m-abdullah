@@ -11,14 +11,14 @@ const LINKEDIN = "https://www.linkedin.com/in/abdullah-mohamed-05426931a/";
 
 export default function Contact() {
   const ref    = useRef<HTMLElement>(null);
-  const inView = useInView(ref, { once: true, amount: 0.15 });
+  const inView = useInView(ref, { once: true });
 
   return (
     <section
       ref={ref}
       id="contact"
       className="relative overflow-hidden"
-      style={{ minHeight: "90vh", background: "rgba(0,18,25,0.55)", backdropFilter: "blur(12px)", borderTop: "1px solid rgba(80,232,244,0.06)" }}
+      style={{ minHeight: "90vh", background: "rgba(0,18,25,0.82)", borderTop: "1px solid rgba(80,232,244,0.06)" }}
     >
       {/* Top glow line */}
       <div
@@ -29,7 +29,7 @@ export default function Contact() {
       {/* RIGHT — full-height photo, desktop */}
       <motion.div
         initial={{ opacity: 0 }}
-        animate={inView ? { opacity: 1 } : {}}
+        animate={inView ? { opacity: 1 } : { opacity: 0 }}
         transition={{ duration: 1.2, delay: 0.2 }}
         className="absolute inset-y-0 right-0 w-full md:w-1/2 hidden md:block"
       >
@@ -112,7 +112,7 @@ export default function Contact() {
         {/* Mobile photo */}
         <motion.div
           initial={{ opacity: 0 }}
-          animate={inView ? { opacity: 1 } : {}}
+          animate={inView ? { opacity: 1 } : { opacity: 0 }}
           transition={{ duration: 1, delay: 0.4 }}
           className="md:hidden relative mt-12 -mx-8 h-72"
         >

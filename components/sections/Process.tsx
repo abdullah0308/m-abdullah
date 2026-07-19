@@ -15,7 +15,7 @@ export default function Process() {
   const { content }  = useSiteContent();
   const sectionRef   = useRef<HTMLDivElement>(null);
   const lineRef      = useRef<HTMLDivElement>(null);
-  const isInView     = useInView(sectionRef, { once: true, margin: "-100px" });
+  const isInView     = useInView(sectionRef, { once: true });
   const steps = content.process.steps;
 
   // Draw the line on scroll
@@ -35,7 +35,7 @@ export default function Process() {
   }, []);
 
   return (
-    <SectionWrapper id="process" className="bg-charcoal-mid/50 backdrop-blur-md overflow-hidden">
+    <SectionWrapper id="process" className="bg-charcoal-mid/75 overflow-hidden">
       <div className="max-w-7xl mx-auto" ref={sectionRef}>
 
         {/* Header */}
@@ -103,14 +103,15 @@ export default function Process() {
             {steps.map((step, index) => (
               <motion.div
                 key={step.phase}
-                className="flex flex-col items-center text-center gap-3 px-1"
+                className="group flex flex-col items-center text-center gap-3 px-1 cursor-default"
                 initial={{ opacity: 0, y: 20 }}
                 animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+                whileHover={{ y: -5 }}
                 transition={{ duration: 0.5, ease: "easeOut", delay: 0.55 + index * 0.13 }}
               >
-                <span className="text-white/25 text-xs tracking-widest font-mono">{step.step}</span>
-                <EditableText path={`process.steps.${index}.phase`} tag="h3" className="font-title text-white text-sm md:text-base" />
-                <EditableText path={`process.steps.${index}.description`} tag="p" className="text-white/65 text-xs leading-relaxed" />
+                <span className="text-white/25 text-xs tracking-widest font-mono transition-colors duration-300 group-hover:text-gold/80">{step.step}</span>
+                <EditableText path={`process.steps.${index}.phase`} tag="h3" className="font-title text-white text-sm md:text-base transition-colors duration-300 group-hover:text-gold" />
+                <EditableText path={`process.steps.${index}.description`} tag="p" className="text-white/65 text-xs leading-relaxed transition-colors duration-300 group-hover:text-white/85" />
               </motion.div>
             ))}
           </div>

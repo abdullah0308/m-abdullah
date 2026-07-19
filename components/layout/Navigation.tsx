@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 
-/* ── Archery-themed icon set ── */
+/* ── Archery-themed icon set (mobile drawer) ── */
 const IconAbout = () => (
   <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
     <circle cx="12" cy="8" r="4" />
@@ -56,8 +56,11 @@ const PILL_SHADOW = [
   "0 0 36px rgba(80,232,244,0.05)",
 ].join(", ");
 
+const easeOut = [0.22, 1, 0.36, 1] as const;
+
 export default function Navigation() {
   const [activeSection, setActiveSection] = useState("");
+  const [hovered,       setHovered]       = useState<string | null>(null);
   const [mobileOpen,    setMobileOpen]    = useState(false);
 
   // Clear active highlight when back near the top (hero)
@@ -88,68 +91,100 @@ export default function Navigation() {
 
   return (
     <>
-      {/* ── Desktop pill nav ── */}
-      <div className="fixed top-5 left-1/2 -translate-x-1/2 z-50 hidden md:block">
-        <div
-          className="relative flex items-center h-[58px] select-none overflow-hidden"
+      {/* ── Logo, standalone in the top-left corner ── */}
+      <motion.button
+        onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+        className="fixed top-5 left-6 z-50 hidden md:block"
+        aria-label="Go to top"
+        initial={{ opacity: 0, y: -14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.7, ease: easeOut, delay: 0.1 }}
+        whileHover={{ scale: 1.07 }}
+        whileTap={{ scale: 0.96 }}
+        style={{ filter: "drop-shadow(0 4px 14px rgba(0,0,0,0.6))" }}
+      >
+        <Image src="/images/AM Logo.svg" alt="AM" width={63} height={32} className="h-8 w-auto" />
+      </motion.button>
+
+      {/* ── Desktop glass nav ── */}
+      <motion.div
+        className="fixed top-5 left-1/2 z-50 hidden md:block w-max"
+        initial={{ x: "-50%", y: -28, opacity: 0 }}
+        animate={{ x: "-50%", y: 0, opacity: 1 }}
+        transition={{ duration: 0.8, ease: easeOut, delay: 0.25 }}
+      >
+        <nav
+          className="relative flex items-center h-[52px] px-2 select-none"
           style={{
             borderRadius: 9999,
-            background: "linear-gradient(180deg, #0f1d2c 0%, #060e18 100%)",
+            background: "linear-gradient(180deg, rgba(18,32,44,0.92) 0%, rgba(5,12,20,0.96) 100%)",
             boxShadow: PILL_SHADOW,
-            minWidth: 680,
           }}
         >
-          {/* Left teal accent glow */}
+          {/* soft teal edge glows */}
           <div
             className="absolute left-0 top-0 bottom-0 w-24 pointer-events-none"
-            style={{
-              background: "radial-gradient(ellipse at left center, rgba(80,232,244,0.22) 0%, transparent 75%)",
-              borderRadius: "9999px 0 0 9999px",
-            }}
+            style={{ background: "radial-gradient(ellipse at left center, rgba(80,232,244,0.16) 0%, transparent 75%)", borderRadius: "9999px 0 0 9999px" }}
           />
-          {/* Right teal accent glow */}
           <div
             className="absolute right-0 top-0 bottom-0 w-24 pointer-events-none"
-            style={{
-              background: "radial-gradient(ellipse at right center, rgba(80,232,244,0.18) 0%, transparent 75%)",
-              borderRadius: "0 9999px 9999px 0",
-            }}
+            style={{ background: "radial-gradient(ellipse at right center, rgba(80,232,244,0.12) 0%, transparent 75%)", borderRadius: "0 9999px 9999px 0" }}
           />
 
-          {/* Logo section */}
-          <button
-            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-            className="relative flex items-center justify-center shrink-0 w-[84px] h-full group"
-            aria-label="Go to top"
-          >
-            <Image src="/images/AM Web Logo.svg" alt="AM" width={40} height={28} className="h-7 w-auto transition-opacity duration-200 group-hover:opacity-70" />
-          </button>
-
-          {/* Left separator */}
-          <div className="h-7 w-px shrink-0" style={{ background: "rgba(80,232,244,0.12)" }} />
-
-          {/* Nav links */}
-          <ul className="flex items-center flex-1 justify-center gap-1 px-3">
-            {navLinks.map(({ label, href, Icon }) => {
+          <ul className="relative flex items-center">
+            {navLinks.map(({ label, href }) => {
               const id = href.replace("#", "");
               const isActive = activeSection === id;
               return (
-                <li key={label}>
+                <li key={label} className="relative">
                   <button
                     onClick={() => handleLink(href)}
-                    className="relative flex flex-col items-center gap-[3px] px-4 py-2 group transition-colors duration-150"
-                    style={{ color: isActive ? "#50E8F4" : "rgba(255,255,255,0.45)" }}
-                    onMouseEnter={(e) => { if (!isActive) (e.currentTarget as HTMLButtonElement).style.color = "rgba(255,255,255,0.9)"; }}
-                    onMouseLeave={(e) => { if (!isActive) (e.currentTarget as HTMLButtonElement).style.color = "rgba(255,255,255,0.45)"; }}
+                    onMouseEnter={() => setHovered(id)}
+                    onMouseLeave={() => setHovered(null)}
+                    className="group relative px-5 py-4"
                   >
-                    <Icon />
-                    <span className="text-[10px] tracking-[0.12em] uppercase font-mono leading-none">{label}</span>
-                    {/* Active underline */}
+                    {/* morphing hover highlight — glides between items */}
+                    <AnimatePresence>
+                      {hovered === id && (
+                        <motion.span
+                          layoutId="nav-hover"
+                          className="absolute inset-x-0.5 inset-y-2"
+                          style={{
+                            borderRadius: 9999,
+                            background: "rgba(80,232,244,0.09)",
+                            boxShadow: "inset 0 0 0 1px rgba(80,232,244,0.14)",
+                          }}
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0, transition: { duration: 0.18 } }}
+                          transition={{ type: "spring", stiffness: 420, damping: 32 }}
+                        />
+                      )}
+                    </AnimatePresence>
+
+                    {/* rolling label */}
+                    <span className="relative block overflow-hidden leading-none">
+                      <span
+                        className={`block text-[11px] font-mono uppercase tracking-[0.16em] leading-none whitespace-nowrap transition-transform duration-300 ease-out group-hover:-translate-y-[110%] ${
+                          isActive ? "text-gold" : "text-white/60"
+                        }`}
+                      >
+                        {label}
+                      </span>
+                      <span
+                        aria-hidden
+                        className="absolute inset-x-0 top-[110%] block text-[11px] font-mono uppercase tracking-[0.16em] leading-none whitespace-nowrap text-gold-light transition-transform duration-300 ease-out group-hover:-translate-y-[110%]"
+                      >
+                        {label}
+                      </span>
+                    </span>
+
+                    {/* sliding active dot */}
                     {isActive && (
-                      <motion.div
-                        layoutId="pill-indicator"
-                        className="absolute -bottom-0 left-1/2 -translate-x-1/2 h-[2px] w-5 rounded-full"
-                        style={{ background: "#50E8F4", boxShadow: "0 0 6px rgba(80,232,244,0.8)" }}
+                      <motion.span
+                        layoutId="nav-active"
+                        className="absolute bottom-[7px] h-[3px] w-[3px] rounded-full"
+                        style={{ left: "50%", marginLeft: -1.5, background: "#50E8F4", boxShadow: "0 0 8px rgba(80,232,244,1)" }}
                         transition={{ type: "spring", stiffness: 450, damping: 32 }}
                       />
                     )}
@@ -158,26 +193,8 @@ export default function Navigation() {
               );
             })}
           </ul>
-
-          {/* Right separator */}
-          <div className="h-7 w-px shrink-0" style={{ background: "rgba(80,232,244,0.12)" }} />
-
-          {/* CTA section */}
-          <button
-            onClick={() => handleLink("#contact")}
-            className="relative flex items-center justify-center shrink-0 w-[120px] h-full group"
-          >
-            <span
-              className="text-[11px] font-mono tracking-[0.18em] uppercase transition-colors duration-150"
-              style={{ color: "rgba(80,232,244,0.85)" }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLSpanElement).style.color = "#C7F8FE"; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLSpanElement).style.color = "rgba(80,232,244,0.85)"; }}
-            >
-              Get in Touch
-            </span>
-          </button>
-        </div>
-      </div>
+        </nav>
+      </motion.div>
 
       {/* ── Mobile compact pill ── */}
       <div className="fixed top-4 left-4 right-4 z-50 md:hidden">
@@ -194,7 +211,7 @@ export default function Navigation() {
             style={{ background: "radial-gradient(ellipse at left center, rgba(80,232,244,0.2) 0%, transparent 75%)", borderRadius: "9999px 0 0 9999px" }} />
 
           <button onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} className="shrink-0">
-            <Image src="/images/AM Web Logo.svg" alt="AM" width={36} height={24} className="h-6 w-auto" />
+            <Image src="/images/AM Logo.svg" alt="AM" width={47} height={24} className="h-6 w-auto" />
           </button>
 
           {/* Hamburger */}
@@ -227,11 +244,16 @@ export default function Navigation() {
             }}
           >
             <ul className="flex flex-col py-3">
-              {navLinks.map(({ label, href, Icon }) => {
+              {navLinks.map(({ label, href, Icon }, i) => {
                 const id = href.replace("#", "");
                 const isActive = activeSection === id;
                 return (
-                  <li key={label}>
+                  <motion.li
+                    key={label}
+                    initial={{ opacity: 0, x: -14 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.05 + i * 0.05, duration: 0.3, ease: "easeOut" }}
+                  >
                     <button
                       onClick={() => handleLink(href)}
                       className="w-full flex items-center gap-4 px-6 py-4 transition-colors duration-150"
@@ -243,18 +265,9 @@ export default function Navigation() {
                         <div className="ml-auto w-1.5 h-1.5 rounded-full" style={{ background: "#50E8F4", boxShadow: "0 0 6px rgba(80,232,244,0.8)" }} />
                       )}
                     </button>
-                  </li>
+                  </motion.li>
                 );
               })}
-              <li className="mx-4 mt-2 mb-1">
-                <button
-                  onClick={() => handleLink("#contact")}
-                  className="w-full text-center py-3 text-xs font-mono tracking-[0.18em] uppercase"
-                  style={{ border: "1px solid rgba(80,232,244,0.3)", color: "#50E8F4" }}
-                >
-                  Get in Touch
-                </button>
-              </li>
             </ul>
           </motion.div>
         )}

@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "node scripts/build.mjs",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "favicons": "node scripts/generate-favicons.mjs"
   },
   "dependencies": {
     "@payloadcms/db-postgres": "^3.84.1",
@@ -22,8 +23,7 @@
     "react-dom": "^19.2.6",
     "resend": "^6.9.4",
     "sharp": "^0.34.5",
-    "three": "^0.185.1",
-    "vanta": "^0.5.24"
+    "three": "^0.185.1"
   },
   "devDependencies": {
     "@types/node": "^20",

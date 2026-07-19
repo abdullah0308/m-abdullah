@@ -10,10 +10,10 @@ import { useSiteContent } from "@/context/SiteContext";
 export default function About() {
   const { content } = useSiteContent();
   const numRef    = useRef<HTMLSpanElement>(null);
-  const numInView = useInView(numRef, { once: true, margin: "-80px" });
+  const numInView = useInView(numRef, { once: true });
 
   return (
-    <SectionWrapper id="about" className="bg-charcoal-deep/50 backdrop-blur-md">
+    <SectionWrapper id="about" className="bg-charcoal-deep/75">
       <div className="max-w-7xl mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20 items-center">
 
@@ -21,9 +21,9 @@ export default function About() {
           <div className="lg:col-span-3 flex flex-col gap-4">
             <motion.span
               ref={numRef}
-              className="font-title text-[8rem] md:text-[10rem] leading-none font-bold text-gold/8 select-none"
+              className="font-title text-[8rem] md:text-[10rem] leading-none font-bold text-gold/10 select-none"
               initial={{ opacity: 0, scale: 0.85 }}
-              animate={numInView ? { opacity: 1, scale: 1 } : {}}
+              animate={numInView ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.85 }}
               transition={{ duration: 0.9, ease: [0.25, 0.46, 0.45, 0.94] }}
             >
               01
@@ -65,11 +65,11 @@ export default function About() {
             <RevealText variant="body" delay={0.3}>
               <div className="pt-4 flex flex-wrap gap-6">
                 {content.about.values.map((value, i) => (
-                  <div key={i} className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-gold" />
+                  <div key={i} className="group flex items-center gap-2 cursor-default">
+                    <div className="w-1.5 h-1.5 rounded-full bg-gold transition-all duration-300 group-hover:scale-150 group-hover:shadow-[0_0_10px_rgba(80,232,244,0.9)]" />
                     <EditableText
                       path={`about.values.${i}`}
-                      className="text-white/65 text-sm tracking-wide font-mono"
+                      className="text-white/65 text-sm tracking-wide font-mono transition-colors duration-300 group-hover:text-white"
                     />
                   </div>
                 ))}

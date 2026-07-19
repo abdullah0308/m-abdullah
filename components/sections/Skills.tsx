@@ -98,7 +98,7 @@ export default function Skills() {
   const [active, setActive] = useState<number | null>(null);
 
   return (
-    <SectionWrapper id="skills" className="bg-charcoal-deep/50 backdrop-blur-md">
+    <SectionWrapper id="skills" className="bg-charcoal-deep/75">
       <div className="max-w-7xl mx-auto">
 
         {/* Header */}

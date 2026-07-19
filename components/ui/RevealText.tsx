@@ -3,14 +3,18 @@
 import { useRef, useEffect, type ReactNode } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { SplitText } from "gsap/SplitText";
 
-gsap.registerPlugin(ScrollTrigger);
+gsap.registerPlugin(ScrollTrigger, SplitText);
+
+/** Plays once on entry and never resets or replays. */
+const PLAY_ONCE: ScrollTrigger.Vars["toggleActions"] = "play none none none";
 
 interface RevealTextProps {
   children: ReactNode;
   /**
-   * heading — rises from clip mask, powerful punch
-   * body    — elegant float-up, stagger if multiple items stacked
+   * heading — masked line-by-line rise (SplitText), staggered
+   * body    — elegant float-up with soft blur-out
    * label   — slides from left, tight and quick
    */
   variant?: "heading" | "body" | "label";
@@ -35,48 +39,71 @@ export default function RevealText({
     const st: ScrollTrigger.Vars = {
       trigger: wrap,
       start: "top 88%",
-      toggleActions: "play none none none",
+      toggleActions: PLAY_ONCE,
     };
 
-    let t: gsap.core.Tween;
+    let cancelled = false;
+    let split: SplitText | null = null;
+    let tween: gsap.core.Tween | null = null;
 
-    if (variant === "heading") {
-      gsap.set(inner, { y: "100%" });
-      t = gsap.to(inner, {
-        y: "0%",
-        duration: 0.72,
-        ease: "power4.out",
-        delay,
-        scrollTrigger: st,
+    // Splitting rewrites the DOM — never do it over contenteditable (edit mode)
+    const editable = inner.querySelector("[contenteditable]") !== null;
+
+    if (variant === "heading" && !editable) {
+      // Wait for fonts so line breaks are measured correctly
+      document.fonts.ready.then(() => {
+        if (cancelled) return;
+        split = SplitText.create(inner, {
+          type: "lines",
+          mask: "lines",
+          linesClass: "rt-line",
+          autoSplit: true,
+          onSplit: (self) =>
+            gsap.from(self.lines, {
+              yPercent: 115,
+              duration: 0.85,
+              stagger: 0.09,
+              ease: "power4.out",
+              delay,
+              scrollTrigger: { ...st },
+            }),
+        });
+        ScrollTrigger.refresh();
       });
+    } else if (variant === "heading") {
+      // Edit-mode fallback: whole-block clip reveal, DOM untouched
+      tween = gsap.fromTo(
+        inner,
+        { yPercent: 110 },
+        { yPercent: 0, duration: 0.8, ease: "power4.out", delay, scrollTrigger: { ...st } }
+      );
     } else if (variant === "label") {
-      gsap.set(inner, { x: -20, opacity: 0 });
-      t = gsap.to(inner, {
-        x: 0,
-        opacity: 1,
-        duration: 0.5,
-        ease: "power3.out",
-        delay,
-        scrollTrigger: st,
-      });
+      tween = gsap.fromTo(
+        inner,
+        { x: -24, opacity: 0 },
+        { x: 0, opacity: 1, duration: 0.55, ease: "power3.out", delay, scrollTrigger: { ...st } }
+      );
     } else {
-      // body — snappy float up, no blur, clean
-      gsap.set(inner, { y: 32, opacity: 0 });
-      t = gsap.to(inner, {
-        y: 0,
-        opacity: 1,
-        duration: 0.65,
-        ease: "power3.out",
-        delay,
-        scrollTrigger: st,
-      });
+      tween = gsap.fromTo(
+        inner,
+        { y: 36, opacity: 0, filter: "blur(6px)" },
+        {
+          y: 0,
+          opacity: 1,
+          filter: "blur(0px)",
+          duration: 0.7,
+          ease: "power3.out",
+          delay,
+          scrollTrigger: { ...st },
+        }
+      );
     }
 
     return () => {
-      t?.kill();
-      ScrollTrigger.getAll().forEach((st) => {
-        if (st.vars.trigger === wrap) st.kill();
-      });
+      cancelled = true;
+      tween?.scrollTrigger?.kill();
+      tween?.kill();
+      split?.revert();
     };
   }, [variant, delay]);
 

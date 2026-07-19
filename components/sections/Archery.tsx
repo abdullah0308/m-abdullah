@@ -11,11 +11,11 @@ import EditableImage from "@/components/ui/EditableImage";
 export default function Archery() {
   const imgLeftRef  = useRef<HTMLDivElement>(null);
   const imgRightRef = useRef<HTMLDivElement>(null);
-  const leftInView  = useInView(imgLeftRef,  { once: true, amount: 0.3 });
-  const rightInView = useInView(imgRightRef, { once: true, amount: 0.3 });
+  const leftInView  = useInView(imgLeftRef,  { once: true });
+  const rightInView = useInView(imgRightRef, { once: true });
 
   return (
-    <SectionWrapper id="archery" className="bg-charcoal-mid/50 backdrop-blur-md overflow-hidden">
+    <SectionWrapper id="archery" className="bg-charcoal-mid/75 overflow-hidden">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-16">
@@ -39,7 +39,7 @@ export default function Archery() {
             <motion.div
               className="relative aspect-[3/4] lg:aspect-auto lg:h-[600px] overflow-hidden group"
               initial={{ clipPath: "inset(0 100% 0 0)" }}
-              animate={leftInView ? { clipPath: "inset(0 0% 0 0)" } : {}}
+              animate={leftInView ? { clipPath: "inset(0 0% 0 0)" } : { clipPath: "inset(0 100% 0 0)" }}
               transition={{ duration: 1.1, ease: [0.25, 0.46, 0.45, 0.94] }}
             >
               <Image
@@ -62,7 +62,7 @@ export default function Archery() {
             <motion.div
               className="relative aspect-square overflow-hidden group"
               initial={{ x: 40, opacity: 0 }}
-              animate={rightInView ? { x: 0, opacity: 1 } : {}}
+              animate={rightInView ? { x: 0, opacity: 1 } : { x: 40, opacity: 0 }}
               transition={{ duration: 0.9, ease: [0.25, 0.46, 0.45, 0.94], delay: 0.2 }}
             >
               <EditableImage
@@ -77,11 +77,21 @@ export default function Archery() {
 
             {/* Quote block */}
             <motion.div
-              className="relative p-8"
+              className="relative p-8 transition-[border-color,box-shadow] duration-500"
               style={{ border: "1px solid rgba(80,232,244,0.08)", background: "rgba(0,22,25,0.6)" }}
               initial={{ opacity: 0, y: 24 }}
-              animate={rightInView ? { opacity: 1, y: 0 } : {}}
+              animate={rightInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 24 }}
               transition={{ duration: 0.7, ease: "easeOut", delay: 0.45 }}
+              onMouseEnter={(e) => {
+                const el = e.currentTarget as HTMLDivElement;
+                el.style.borderColor = "rgba(80,232,244,0.32)";
+                el.style.boxShadow = "0 0 44px rgba(80,232,244,0.10)";
+              }}
+              onMouseLeave={(e) => {
+                const el = e.currentTarget as HTMLDivElement;
+                el.style.borderColor = "rgba(80,232,244,0.08)";
+                el.style.boxShadow = "none";
+              }}
             >
               <span className="font-title text-6xl leading-none absolute -top-3 left-6" style={{ color: "rgba(80,232,244,0.15)" }}>
                 &ldquo;

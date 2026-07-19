@@ -49,7 +49,10 @@ export default function RevealButton({ children, delay = 0, className }: RevealB
       .to(curtain, { scaleX: 0, transformOrigin: "right center", duration: 0.35, ease: "power2.out" }, "+=0.05")
       .to(content, { opacity: 1, x: 0, duration: 0.4, ease: "power2.out" }, "<0.1");
 
-    return () => { tl.kill(); };
+    return () => {
+      tl.scrollTrigger?.kill();
+      tl.kill();
+    };
   }, [delay]);
 
   return (

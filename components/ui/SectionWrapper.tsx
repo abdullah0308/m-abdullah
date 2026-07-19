@@ -13,7 +13,8 @@ interface Props {
 
 export default function SectionWrapper({ id, children, className }: Props) {
   const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: "-80px" });
+  // No negative margin: only flips to hidden once the section is fully offscreen
+  const isInView = useInView(ref, { once: false });
 
   return (
     <section

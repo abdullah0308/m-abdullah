@@ -1,8 +1,11 @@
 "use client";
 
 import { useRef, useEffect } from "react";
-import { motion, useScroll, useTransform } from "framer-motion";
+import { motion, useScroll, useTransform, useInView } from "framer-motion";
 import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+gsap.registerPlugin(ScrollTrigger);
 import Image from "next/image";
 import EditableText from "@/components/ui/EditableText";
 import { useSiteContent } from "@/context/SiteContext";
@@ -31,6 +34,10 @@ export default function Hero() {
   const containerRef = useRef<HTMLDivElement>(null);
   const firstNameRef = useRef<HTMLSpanElement>(null);
   const lastNameRef  = useRef<HTMLSpanElement>(null);
+  const contentRef   = useRef<HTMLDivElement>(null);
+  const taglineRef   = useRef<HTMLDivElement>(null);
+  const contentInView = useInView(contentRef, { once: true });
+  const taglineInView  = useInView(taglineRef, { once: true });
 
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -58,8 +65,18 @@ export default function Hero() {
       .join("");
 
     const chars = first.querySelectorAll<HTMLElement>(".c");
+    const maskWrappers = Array.from(first.querySelectorAll<HTMLElement>(":scope > span"));
 
-    const tl = gsap.timeline({ delay: 0.3 });
+    const tl = gsap.timeline({
+      delay: 0.3,
+      scrollTrigger: {
+        trigger: containerRef.current,
+        start: "top 90%",
+        toggleActions: "play none none none",
+      },
+      // release the reveal masks once done so the hover lift isn't clipped
+      onComplete: () => maskWrappers.forEach((w) => (w.style.overflow = "visible")),
+    });
 
     tl.from(chars, { y: "105%", duration: 0.7, stagger: 0.032, ease: "power4.out" });
     tl.fromTo(
@@ -69,7 +86,28 @@ export default function Hero() {
       "-=0.4"
     );
 
-    return () => { tl.kill(); };
+    // Hover: each letter springs up as the cursor passes over it
+    const hoverHandlers = new Map<HTMLElement, () => void>();
+    chars.forEach((c) => {
+      const fn = () => {
+        gsap.to(c, {
+          y: -8,
+          duration: 0.18,
+          ease: "power2.out",
+          overwrite: "auto",
+          onComplete: () =>
+            gsap.to(c, { y: 0, duration: 0.7, ease: "elastic.out(1, 0.45)" }),
+        });
+      };
+      c.addEventListener("mouseenter", fn);
+      hoverHandlers.set(c, fn);
+    });
+
+    return () => {
+      hoverHandlers.forEach((fn, c) => c.removeEventListener("mouseenter", fn));
+      tl.scrollTrigger?.kill();
+      tl.kill();
+    };
   }, [content.hero.firstName, content.hero.lastName]);
 
   const taglineLines = content.hero.tagline;
@@ -77,7 +115,7 @@ export default function Hero() {
   return (
     <section
       ref={containerRef}
-      className="relative h-screen w-full overflow-hidden flex items-start md:items-center"
+      className="relative h-[90vh] md:h-screen w-full overflow-hidden flex items-start md:items-center"
     >
       {/* ── No global overlay — VANTA clouds show through everywhere ── */}
       <div className="absolute inset-0 z-0">
@@ -106,7 +144,7 @@ export default function Hero() {
             style={{ background: "linear-gradient(to top, rgba(3,13,24,0.9) 0%, transparent 100%)" }}
           />
           <Image
-            src="/images/AM.png"
+            src="/images/AM.webp"
             alt="Abdullah Mohamed"
             fill
             priority
@@ -121,7 +159,7 @@ export default function Hero() {
           {/* AM.png — large, bottom-anchored */}
           <div className="absolute bottom-0 left-0 right-0 h-[100vh]">
             <Image
-              src="/images/AM.png"
+              src="/images/AM.webp"
               alt="Abdullah Mohamed"
               fill
               priority
@@ -148,7 +186,13 @@ export default function Hero() {
         className="relative z-20 max-w-7xl mx-auto px-6 md:px-12 w-full pt-24 md:pt-0"
         style={{ y: contentY, opacity }}
       >
-        <motion.div variants={containerVariants} initial="hidden" animate="visible" className="max-w-xl">
+        <motion.div
+          ref={contentRef}
+          variants={containerVariants}
+          initial="hidden"
+          animate={contentInView ? "visible" : "hidden"}
+          className="max-w-xl"
+        >
 
           {/* Label */}
           <motion.div variants={itemUp} className="flex items-center gap-3 mb-8">
@@ -185,7 +229,13 @@ export default function Hero() {
               <EditableText path="hero.tagline.1" tag="div" className="text-xl md:text-2xl text-white/80 font-light" />
             </div>
           ) : (
-            <motion.div variants={taglineContainer} initial="hidden" animate="visible" className="mb-4">
+            <motion.div
+              ref={taglineRef}
+              variants={taglineContainer}
+              initial="hidden"
+              animate={taglineInView ? "visible" : "hidden"}
+              className="mb-4"
+            >
               {taglineLines.map((line, li) => (
                 <div key={li} className="flex flex-wrap gap-x-2 overflow-hidden mb-1">
                   {line.split(" ").map((word, wi) => (
