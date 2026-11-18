@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import Image from "next/image";
+import dynamic from "next/dynamic";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowRight,
@@ -49,7 +50,77 @@ import {
 } from "./players";
 import { audioState, duckMusic, loadPrefs, releaseMusic, setMood, setMusic, setSfx, setVolume, sfx, unlockSound } from "./sound";
 import { CardDetail, CardFace, cardWidth, useTiles, type Card, type Tile } from "./tiles";
-import { haptic, loadRumblePref, markPadInUse, rumble, setRumble, useGamepad, type PadAction } from "./useGamepad";
+import { haptic, loadRumblePref, markPadInUse, needsDirectRumble, rumble, setRumble, testRumble, useGamepad, type PadAction } from "./useGamepad";
+import { dualSenseLight, dualSenseRumble, requestDualSense, restoreDualSense } from "./dualsense";
+import PadKeyboard, { type PadKeyboardApi } from "./PadKeyboard";
+import { tune as tuneIsland, unlockAudio as unlockIslandAudio } from "@/components/island/audio";
+
+// The island game is a large download (a 3D engine); it loads only when launched.
+const IslandApp = dynamic(() => import("@/components/island/IslandApp"), { ssr: false });
+
+/**
+ * Launching a game from its tile: the key art fills the screen and holds for
+ * a moment, then the game takes over (its own loading screen and title).
+ */
+function IslandLaunch({ onExit, reduce }: { onExit: () => void; reduce: boolean }) {
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setReady(true), reduce ? 0 : 1300);
+    return () => clearTimeout(t);
+  }, [reduce]);
+  return (
+    <motion.div
+      className="fixed inset-0 z-[58] bg-black"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: reduce ? 0 : 0.35 }}
+    >
+      <motion.div
+        className="absolute inset-0"
+        initial={reduce ? false : { scale: 1.12, opacity: 0.4 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ duration: 1.2, ease: EASE }}
+      >
+        <Image src="/images/play/golden-hour.webp" alt="" fill priority sizes="100vw" className="object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-black/30" />
+      </motion.div>
+      <div className="absolute bottom-[9vh] left-[6vw]">
+        <p className="island-title text-[clamp(3.4rem,9vw,8rem)]">Golden Hour</p>
+        <p className="mt-3 flex items-center gap-3 text-sm text-white/80">
+          <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" aria-hidden="true" />
+          Starting the game
+        </p>
+      </div>
+      {ready && <IslandApp onExit={onExit} />}
+    </motion.div>
+  );
+}
+
+/** What a PS5 controller needs before it can buzz: said on connect, and by the test. */
+const DUALSENSE_NOTE =
+  "Chrome cannot vibrate a PS5 controller by itself. Plug it in with a USB cable, then choose Turn on vibration in the quick menu (one click, remembered).";
+
+/** A field the on-screen keyboard can type into. */
+function isTextField(el: Element | null): el is HTMLInputElement | HTMLTextAreaElement {
+  if (el instanceof HTMLTextAreaElement) return !el.readOnly && !el.disabled;
+  if (!(el instanceof HTMLInputElement) || el.readOnly || el.disabled) return false;
+  return ["text", "email", "search", "tel", "url", ""].includes(el.type);
+}
+
+/** Set a field's value the way typing does, so React's onChange sees it. */
+function writeField(el: HTMLInputElement | HTMLTextAreaElement, value: string) {
+  const proto = el instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
+  Object.getOwnPropertyDescriptor(proto, "value")?.set?.call(el, value);
+  el.dispatchEvent(new Event("input", { bubbles: true }));
+}
+
+/** What a field is called: its label, else its placeholder or name. */
+function fieldLabel(el: HTMLInputElement | HTMLTextAreaElement) {
+  const byFor = el.id ? document.querySelector(`label[for="${CSS.escape(el.id)}"]`) : null;
+  const text = (byFor ?? el.closest("label"))?.textContent?.trim();
+  return text || el.getAttribute("aria-label") || el.placeholder || el.name || "Text";
+}
 
 type Screen = "boot" | "profiles" | "home";
 type Row = "tiles" | "cards";
@@ -57,6 +128,7 @@ type Overlay =
   | { kind: "card"; card: Card }
   | { kind: "mail" }
   | { kind: "game" }
+  | { kind: "island" }
   | { kind: "milestones" }
   | { kind: "menu" }
   | { kind: "add" }
@@ -319,6 +391,13 @@ export default function ConsoleApp() {
   const tileRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const cardRefs = useRef<(HTMLElement | null)[]>([]);
   const panel = useRef<HTMLDivElement>(null);
+  // The on-screen keyboard, for typing into a dialog's text fields with a pad.
+  const [kb, setKb] = useState<{ label: string; max: number } | null>(null);
+  const [kbValue, setKbValue] = useState("");
+  const kbTarget = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
+  const kbApi = useRef<PadKeyboardApi | null>(null);
+  const kbOpen = useRef(false);
+  kbOpen.current = !!kb;
   // Set when the keyboard or a pad moved the focus, so DOM focus follows it
   // (pointing with a mouse should not yank focus or scroll the rows).
   const steer = useRef(false);
@@ -413,8 +492,27 @@ export default function ConsoleApp() {
     setMood(all.findIndex((t) => t.id === current.id));
   }, [all, current.id]);
   useEffect(() => {
-    duckMusic(overlay?.kind === "game");
+    duckMusic(overlay?.kind === "game" || overlay?.kind === "island");
   }, [overlay]);
+
+  // A game's tile plays the game's own theme while it is focused, as a console
+  // does: here, the island's car radio, quietly, in place of the home music.
+  useEffect(() => {
+    if (screen !== "home" || overlay || current.id !== "golden-hour" || !music || soundLocked) return;
+    let started = false;
+    const t = setTimeout(() => {
+      started = true;
+      unlockIslandAudio();
+      duckMusic(true);
+      tuneIsland(0, { preview: true });
+    }, 650);
+    return () => {
+      clearTimeout(t);
+      if (!started) return;
+      tuneIsland(-1, { preview: true });
+      duckMusic(false);
+    };
+  }, [screen, overlay, current.id, music, soundLocked]);
 
   // The console is off until the first press; then it powers on (Boot.tsx)
   // and hands over to "Who is playing?". A second press skips the start-up.
@@ -498,7 +596,7 @@ export default function ConsoleApp() {
       }
       if (c.kind === "action") {
         fx.select();
-        go.overlay(c.modal === "game" ? { kind: "game" } : { kind: "mail" });
+        go.overlay(c.modal === "game" ? { kind: "game" } : c.modal === "island" ? { kind: "island" } : { kind: "mail" });
         return;
       }
       fx.open();
@@ -548,13 +646,41 @@ export default function ConsoleApp() {
     });
   }, []);
 
+  // A PS5 controller: ask Chrome for it once (a click or key, never a pad button).
+  const [directReady, setDirectReady] = useState(false);
+  useEffect(() => {
+    void restoreDualSense().then(setDirectReady);
+  }, []);
+  const turnOnVibration = useCallback(async () => {
+    const result = await requestDualSense();
+    if (result === "ok") {
+      setDirectReady(true);
+      dualSenseRumble(0.8, 0.9, 450);
+      toast("Vibration on", "Your controller will buzz from now on, on this browser.");
+    } else if (result === "bluetooth") toast("Plug in the cable", "It only works over USB: over Bluetooth Chrome cannot send the controller anything.");
+    else if (result === "unsupported") toast("Not in this browser", "Use Chrome or Edge on a computer.");
+    else if (result === "failed") toast("Use the mouse or Enter", "Chrome only opens this with a click or a key, not a controller button.");
+  }, [toast]);
+
   const testVibrate = useCallback(() => {
-    const sent = rumble(0.9, 0.9, 450, true);
-    toast(
-      sent ? "Vibration sent" : "No vibration",
-      sent ? "Felt nothing? This browser cannot rumble this controller." : pad ? "This browser cannot rumble this controller." : "Connect a controller first."
-    );
-  }, [pad, toast]);
+    const check = testRumble();
+    if (!check.pads.length) {
+      toast("No controller found", "Connect one and press any button on it, then try again.");
+      return;
+    }
+    if (!check.pads.some((p) => p.canBuzz)) {
+      // A PS5 controller the browser cannot vibrate: the direct route needs turning on.
+      if (check.pads.some((p) => /054c/i.test(p.id))) toast("Turn on vibration first", DUALSENSE_NOTE);
+      else toast("This browser cannot vibrate", "Chrome or Edge can. Firefox cannot vibrate a controller at all.");
+      return;
+    }
+    // What the browser answered: "complete" means the buzz was sent to the pad.
+    check.results.then((answers) => {
+      const ok = answers.some((a) => a === "complete" || a === "preempted");
+      if (ok) toast("Vibration sent", "Felt nothing? Close Steam or any controller app: they can take over the pad.");
+      else toast("The browser refused", answers.join(", "));
+    });
+  }, [toast]);
 
   const share = useCallback(async () => {
     const url = window.location.origin;
@@ -594,8 +720,13 @@ export default function ConsoleApp() {
       if (s.screen === "boot") return start();
 
       // dialogs: step through what is in them, select, go back
-      if (s.overlay && s.overlay.kind !== "game") {
+      if (s.overlay && s.overlay.kind !== "game" && s.overlay.kind !== "island") {
         const root = panel.current;
+        // The on-screen keyboard has the pad while it is open.
+        if (kbOpen.current) {
+          kbApi.current?.handle(action);
+          return;
+        }
         if (action === "back") {
           fx.back();
           go.overlay(null);
@@ -608,6 +739,14 @@ export default function ConsoleApp() {
           else fx.edge();
         } else if (action === "select") {
           const el = document.activeElement;
+          if (isTextField(el) && root.contains(el)) {
+            // Selecting a text field with the pad opens the keyboard on it.
+            kbTarget.current = el;
+            setKbValue(el.value);
+            setKb({ label: fieldLabel(el), max: el.maxLength > 0 ? el.maxLength : 600 });
+            fx.open();
+            return;
+          }
           if (el instanceof HTMLSelectElement) {
             el.selectedIndex = (el.selectedIndex + 1) % el.options.length;
             el.dispatchEvent(new Event("change", { bubbles: true }));
@@ -777,7 +916,7 @@ export default function ConsoleApp() {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       noteInput("keys");
       const s = state.current;
-      if (s.overlay?.kind === "game") return; // the game has the keyboard
+      if (s.overlay?.kind === "game" || s.overlay?.kind === "island") return; // the game has the keyboard
       if (s.screen === "boot") {
         if (e.key === "Tab") return;
         e.preventDefault();
@@ -812,11 +951,17 @@ export default function ConsoleApp() {
       act(a);
     },
     {
-    paused: overlay?.kind === "game",
+    paused: overlay?.kind === "game" || overlay?.kind === "island",
     onConnect: () => {
       setPad(true);
       grant("pad");
       toast("Controller connected", "Nearly every button does something. Press R3 for the guide.");
+      // A PS5 controller the browser cannot vibrate: reopen it if allowed before,
+      // otherwise say how to turn vibration on, once, rather than after a silent test.
+      void restoreDualSense().then((ready) => {
+        setDirectReady(ready);
+        if (!ready && needsDirectRumble()) setTimeout(() => toast("Vibration needs one click", DUALSENSE_NOTE), 2600);
+      });
     },
   }
   );
@@ -832,7 +977,7 @@ export default function ConsoleApp() {
   }, [screen, overlay, row, tab, tileIndex, card, reduce]);
 
   useEffect(() => {
-    if (!overlay || overlay.kind === "game") return;
+    if (!overlay || overlay.kind === "game" || overlay.kind === "island") return;
     const t = setTimeout(() => {
       const root = panel.current;
       if (!root) return;
@@ -841,6 +986,36 @@ export default function ConsoleApp() {
     }, 60);
     return () => clearTimeout(t);
   }, [overlay]);
+
+  // The keyboard belongs to one dialog: it closes with it.
+  useEffect(() => {
+    setKb(null);
+  }, [overlay]);
+
+  // Typing on a real keyboard while it is open keeps the two in step.
+  useEffect(() => {
+    const el = kbTarget.current;
+    if (!kb || !el) return;
+    const sync = () => setKbValue(el.value);
+    el.addEventListener("input", sync);
+    return () => el.removeEventListener("input", sync);
+  }, [kb]);
+
+  const closeKeyboard = useCallback((done: boolean) => {
+    const el = kbTarget.current;
+    setKb(null);
+    if (!el) return;
+    if (done) {
+      fx.select();
+      // On to the next control below the field, as a console does after "Done".
+      el.focus({ preventScroll: true });
+      const root = panel.current;
+      if (root && !spatial(root, "down")) el.focus({ preventScroll: true });
+    } else {
+      fx.back();
+      el.focus({ preventScroll: true });
+    }
+  }, []);
 
   // Best at 70 m for every profile on this device, for the game's leaderboard.
   const board = useMemo(() => {
@@ -852,6 +1027,12 @@ export default function ConsoleApp() {
   }, [overlay, accounts, player?.id, bests]);
 
   const accent = player?.accent ?? (screen === "profiles" ? ((profiles[profile] as Player | undefined)?.accent ?? "ginger") : "ginger");
+  // The controller's light bar takes the player's colour too.
+  useEffect(() => {
+    if (!directReady) return;
+    const [r, g, b] = ACCENTS[accent].rgb.split(" ").map(Number);
+    dualSenseLight([r, g, b]);
+  }, [accent, directReady]);
   const fade = { duration: reduce ? 0 : 0.5, ease: EASE };
   const visitorName = player?.kind === "visitor" ? player.name : "";
 
@@ -1175,7 +1356,7 @@ export default function ConsoleApp() {
 
       {/* dialogs */}
       <AnimatePresence>
-        {overlay && overlay.kind !== "game" && (
+        {overlay && overlay.kind !== "game" && overlay.kind !== "island" && (
           <motion.div
             key="dialog"
             className="fixed inset-0 z-[55] grid place-items-center bg-black/70 p-4 backdrop-blur-sm"
@@ -1295,6 +1476,15 @@ export default function ConsoleApp() {
                         <span className="block text-sm text-content/60">The controller buzzes as you go</span>
                       </span>
                     </button>
+                    {pad && !directReady && needsDirectRumble() && (
+                      <button type="button" onClick={turnOnVibration} className="flex items-center gap-3 rounded-xl bg-accent/90 p-4 text-left text-onAccent hover:bg-accent">
+                        <Vibrate size={24} />
+                        <span>
+                          <span className="block font-medium">Turn on vibration</span>
+                          <span className="block text-sm opacity-75">PS5 controller over USB: allow it once</span>
+                        </span>
+                      </button>
+                    )}
                     <button type="button" onClick={testVibrate} className="flex items-center gap-3 rounded-xl bg-white/[0.07] p-4 text-left hover:bg-white/[0.12]">
                       <Vibrate size={24} />
                       <span>
@@ -1376,6 +1566,9 @@ export default function ConsoleApp() {
                             <Shuffle size={18} weight="bold" />
                           </button>
                         </div>
+                        {inputMode === "pad" && (
+                          <p className="text-xs text-content/60">Press the south button on the field to type with the controller.</p>
+                        )}
                       </div>
                       <fieldset>
                         <legend className="mb-2 text-sm font-medium">Icon</legend>
@@ -1615,6 +1808,42 @@ export default function ConsoleApp() {
           ))}
         </AnimatePresence>
       </div>
+
+      {/* the island game, launched from its tile */}
+      <AnimatePresence>
+        {overlay?.kind === "island" && (
+          <IslandLaunch
+            key="island"
+            reduce={reduce}
+            onExit={() => {
+              fx.back();
+              go.overlay(null);
+            }}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* typing with the pad */}
+      <AnimatePresence>
+        {kb && (
+          <PadKeyboard
+            key="keyboard"
+            api={kbApi}
+            label={kb.label}
+            value={kbValue}
+            maxLength={kb.max}
+            onChange={(v) => {
+              setKbValue(v);
+              if (kbTarget.current) writeField(kbTarget.current, v);
+            }}
+            onDone={() => closeKeyboard(true)}
+            onClose={() => closeKeyboard(false)}
+            onMove={fx.move}
+            onType={() => (sfx.move(), haptic("move"))}
+            onEdge={fx.edge}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

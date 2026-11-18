@@ -195,7 +195,7 @@ export const defaultContent = {
         adjustment:
           "Translation is not just text. Structure, navigation, and content relationships all have to work in every language.",
         tags: ["WordPress", "WPML", "PHP"],
-        image: "/images/work/multilingual.webp",
+        image: "/images/work/multilingual-sites.webp",
         review: "Miaou, meow, and miau all render correctly.",
       },
     ],

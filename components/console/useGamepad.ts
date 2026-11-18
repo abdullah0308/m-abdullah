@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { dualSenseReady, dualSenseRumble, restoreDualSense } from "./dualsense";
 
 /**
  * Every button the console listens to, by what it does here. Names are by
@@ -57,7 +58,9 @@ const DEADZONE = 0.55;
 
 export function connectedPad(): Gamepad | null {
   if (typeof navigator === "undefined" || !navigator.getGamepads) return null;
-  return [...navigator.getGamepads()].find((p): p is Gamepad => !!p && p.connected) ?? null;
+  const pads = [...navigator.getGamepads()].filter((p): p is Gamepad => !!p && p.connected);
+  // Prefer a pad in the standard layout: the indices below assume it.
+  return pads.find((p) => p.mapping === "standard") ?? pads[0] ?? null;
 }
 
 /* ── Vibration ─────────────────────────────────────────────────────────── */
@@ -95,34 +98,133 @@ type Actuator = {
   pulse?: (value: number, ms: number) => Promise<unknown>;
 };
 
+type HapticPad = Gamepad & { vibrationActuator?: Actuator | null; hapticActuators?: Actuator[] };
+
+/**
+ * Every connected pad, not just the first. Windows often lists the same
+ * controller twice (the pad itself and a virtual copy made by Steam or a
+ * driver), and the copy is usually first and cannot vibrate; sending the
+ * buzz only to entry 0 is why a pad could stay still.
+ */
+function allPads(): HapticPad[] {
+  if (typeof navigator === "undefined" || !navigator.getGamepads) return [];
+  return [...navigator.getGamepads()].filter((p): p is HapticPad => !!p && p.connected);
+}
+
+/**
+ * The smallest buzz a hand can feel. Controllers with voice-coil haptics
+ * (a DualSense, for one) turn very short, very light effects into nothing,
+ * so anything asked for is lifted to at least this.
+ */
+const MIN_MS = 60;
+const MIN_MAG = 0.32;
+const lift = (v: number) => (v <= 0 ? 0 : Math.min(1, Math.max(MIN_MAG, v)));
+
 /**
  * A buzz on pads that can, nothing on those that cannot. Chromium browsers
  * expose `vibrationActuator.playEffect("dual-rumble")`; Firefox has
- * `hapticActuators[].pulse`. Returns false when there is no way to rumble.
+ * `hapticActuators[].pulse`. Returns false when no connected pad can rumble.
  */
 export function rumble(strong: number, weak: number, ms: number, force = false): boolean {
   if (!rumbleOn && !force) return false;
-  const pad = connectedPad() as (Gamepad & { vibrationActuator?: Actuator; hapticActuators?: Actuator[] }) | null;
-  if (!pad) return false;
+  const duration = Math.max(MIN_MS, ms);
+  let s = lift(strong);
+  let w = lift(weak);
+  if (s === 0 && w === 0) return false;
+  // Some pads only have the one motor behind "strong": never send it nothing.
+  if (s === 0) s = w * 0.6;
+  if (w === 0) w = s * 0.5;
+  let sent = false;
+  let needsDirect = false;
+  for (const pad of allPads()) {
+    if (buzz(pad, s, w, duration)) sent = true;
+    else if (isPlayStation(pad)) needsDirect = true;
+  }
+  // A PS5 controller the browser cannot vibrate: straight to the controller.
+  if (needsDirect && dualSenseRumble(s, w, duration)) sent = true;
+  return sent;
+}
+
+const isPlayStation = (pad: Gamepad) => /054c/i.test(pad.id);
+
+/** A connected PS5 controller that only the direct route can vibrate. */
+export function needsDirectRumble(): boolean {
+  return allPads().some((p) => isPlayStation(p) && !p.vibrationActuator?.playEffect && !p.hapticActuators?.[0]?.pulse);
+}
+
+/**
+ * One buzz on one pad. Always tries "dual-rumble": some Chromium versions
+ * report an empty or missing list of effects for pads that rumble perfectly
+ * well, so the list is not a reason to skip. Only if the browser refuses does
+ * it fall back to the older one-motor `pulse`.
+ */
+function buzz(pad: HapticPad, s: number, w: number, duration: number, report?: (r: string) => void): boolean {
   const a = pad.vibrationActuator;
+  const h = pad.hapticActuators?.[0];
   if (a?.playEffect) {
-    a.playEffect("dual-rumble", { startDelay: 0, duration: ms, strongMagnitude: Math.min(1, strong), weakMagnitude: Math.min(1, weak) }).catch(() => {});
+    a.playEffect("dual-rumble", { startDelay: 0, duration, strongMagnitude: s, weakMagnitude: w })
+      .then((r) => report?.(String(r)))
+      .catch((err: unknown) => {
+        report?.(`refused (${err instanceof Error ? err.name : "error"})`);
+        h?.pulse?.(Math.max(s, w), duration).catch(() => {});
+      });
     return true;
   }
-  const h = pad.hapticActuators?.[0];
   if (h?.pulse) {
-    h.pulse(Math.min(1, Math.max(strong, weak)), ms).catch(() => {});
+    h.pulse(Math.max(s, w), duration).then(
+      () => report?.("complete"),
+      () => report?.("refused"),
+    );
     return true;
   }
   return false;
 }
 
+export interface RumbleCheck {
+  pads: { id: string; canBuzz: boolean; effects: string }[];
+  /** what the browser answered for each pad, filled in as the answers come back */
+  results: Promise<string[]>;
+}
+
+/**
+ * The "Test vibration" button: a strong buzz on every pad, and what the
+ * browser said about it, so "nothing happened" can be told apart from "the
+ * browser refused" and "there is no pad".
+ */
+export function testRumble(): RumbleCheck {
+  const pads = allPads();
+  const answers = pads.map(
+    (pad) =>
+      new Promise<string>((resolve) => {
+        const ok = buzz(pad, 1, 1, 600, resolve);
+        if (!ok && isPlayStation(pad) && dualSenseRumble(1, 1, 600)) resolve("complete");
+        else if (!ok) resolve("no vibration in this browser");
+        setTimeout(() => resolve("no answer"), 1500);
+      }),
+  );
+  return {
+    pads: pads.map((p) => ({
+      id: p.id,
+      canBuzz: !!p.vibrationActuator?.playEffect || !!p.hapticActuators?.[0]?.pulse || (isPlayStation(p) && dualSenseReady()),
+      effects: p.vibrationActuator?.effects?.join(", ") || "not listed",
+    })),
+    results: Promise.all(answers),
+  };
+}
+
+/** Can anything connected vibrate at all? */
+export function canRumble(): boolean {
+  return allPads().some((p) => !!p.vibrationActuator?.playEffect || !!p.hapticActuators?.[0]?.pulse) || (needsDirectRumble() && dualSenseReady());
+}
+
 /** The triggers' own motors, on pads that have them (otherwise nothing). */
 export function triggerRumble(left: number, right: number, ms: number) {
   if (!rumbleOn) return;
-  const a = (connectedPad() as (Gamepad & { vibrationActuator?: Actuator }) | null)?.vibrationActuator;
-  if (!a?.playEffect || (a.effects && !a.effects.includes("trigger-rumble"))) return;
-  a.playEffect("trigger-rumble", { startDelay: 0, duration: ms, leftTrigger: left, rightTrigger: right, strongMagnitude: 0, weakMagnitude: 0 }).catch(() => {});
+  for (const pad of allPads()) {
+    const a = pad.vibrationActuator;
+    if (!a?.playEffect || !a.effects?.includes("trigger-rumble")) continue;
+    a.playEffect("trigger-rumble", { startDelay: 0, duration: Math.max(MIN_MS, ms), leftTrigger: left, rightTrigger: right, strongMagnitude: 0, weakMagnitude: 0 }).catch(() => {});
+  }
 }
 
 /** The console's touch: a short pattern for each kind of moment. */
@@ -177,6 +279,7 @@ export function useGamepad(
 
   useEffect(() => {
     if (typeof navigator === "undefined" || !navigator.getGamepads) return;
+    void restoreDualSense();
     let raf = 0;
     // when each action was first pressed, and when it last fired
     const held = new Map<PadAction, { since: number; last: number }>();

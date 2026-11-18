@@ -10,9 +10,9 @@ import {
   GameController,
   LinkedinLogo,
   PaperPlaneTilt,
-  Wrench,
+  SteeringWheel,
 } from "@phosphor-icons/react/dist/ssr";
-import type { ComponentType } from "react";
+import { useEffect, useState, type ComponentType } from "react";
 import { useSiteContent } from "@/context/SiteContext";
 import { getPath } from "@/lib/contentUtils";
 import { ABDULLAH_FACE } from "@/components/ui/Face";
@@ -34,7 +34,7 @@ export type Card =
   | { kind: "step"; id: string; distance: string; title: string; body: string }
   | { kind: "controls"; id: string; title: string; rows: [string, string][] }
   | { kind: "link"; id: string; title: string; label: string; href: string; icon: IconType; external?: boolean }
-  | { kind: "action"; id: string; title: string; body: string; icon: IconType; modal: "mail" | "game" };
+  | { kind: "action"; id: string; title: string; body: string; icon: IconType; modal: "mail" | "game" | "island" };
 
 export interface Tile {
   id: string;
@@ -85,7 +85,7 @@ const SPOTTER_TILES: Record<string, { kicker?: string; title?: string; blurb?: s
 };
 
 /** The Spotter's word on each project, by project number. */
-const SPOTTER_TAKES: Record<string, string> = {
+export const SPOTTER_TAKES: Record<string, string> = {
   "01": "I tried to break the checkout. Twice. It held both times.",
   "02": "Clean, organised, fast. He will explain content modelling if you let him. Do not let him.",
   "03": "He built an app to log his arrows, then made me log mine. My groupings are now on record.",
@@ -97,8 +97,32 @@ const SPOTTER_TAKES: Record<string, string> = {
  * other versions use. `Work` is who he is and what he has built; `Play` is
  * the game, the sport, and the friend.
  */
+/** Progress in Golden Hour, read from the game's save on this device. */
+function useIslandProgress() {
+  const [p, setP] = useState({ found: 0, arrows: 0, best: null as number | null });
+  useEffect(() => {
+    const read = () => {
+      try {
+        const s = JSON.parse(localStorage.getItem("am-island-v1") ?? "{}");
+        setP({ found: s.found?.length ?? 0, arrows: s.arrows?.length ?? 0, best: typeof s.best === "number" ? s.best : null });
+      } catch {
+        /* no save yet */
+      }
+    };
+    read();
+    window.addEventListener("am-island-save", read);
+    window.addEventListener("storage", read);
+    return () => {
+      window.removeEventListener("am-island-save", read);
+      window.removeEventListener("storage", read);
+    };
+  }, []);
+  return p;
+}
+
 export function useTiles(narrator: Narrator, best: number): { work: Tile[]; play: Tile[] } {
   const { content } = useSiteContent();
+  const island = useIslandProgress();
   const { meta, hero, about, work, skills, process, archery, contact } = content;
   const spotter = narrator === "spotter";
   const c = (path: string) => String(getPath(content as unknown as Record<string, unknown>, path) ?? "");
@@ -147,8 +171,8 @@ export function useTiles(narrator: Narrator, best: number): { work: Tile[]; play
       kicker: "Toolbox",
       title: c("skills.heading"),
       blurb: c("skills.subheading"),
-      art: { mode: "tools" },
-      thumb: { icon: Wrench },
+      art: { mode: "cover", src: "/images/work/toolbox.webp", pos: "50% 30%" },
+      thumb: { src: "/images/work/toolbox.webp", pos: "82% 20%" },
       cards: skills.groups.map((g): Card => ({ kind: "tools", id: g.title, title: g.title, note: g.note, items: g.items })),
     },
     {
@@ -183,7 +207,63 @@ export function useTiles(narrator: Narrator, best: number): { work: Tile[]; play
     },
   ];
 
+  const raceTime = (t: number) => `${Math.floor(t / 60)}:${(t % 60).toFixed(1).padStart(4, "0")}`;
   const playTiles: Tile[] = [
+    {
+      id: "golden-hour",
+      label: "Golden Hour",
+      kicker: "Open world, driving",
+      title: "Golden Hour",
+      blurb:
+        "An island at sunset, a fast car and the radio on. Every place on the map is a part of my work: drive up to it and it opens. The island is shaped like Mauritius, and all of it, the music included, is made in the browser.",
+      art: { mode: "cover", src: "/images/play/golden-hour.webp", pos: "60% 50%" },
+      thumb: { src: "/images/play/golden-hour-icon.webp" },
+      cards: [
+        {
+          kind: "action",
+          id: "play",
+          title: island.found > 0 ? "Continue" : "Play",
+          body: island.found > 0 ? `${island.found} of 9 places found. Pick up where you left the car.` : "Nine places to find, ten golden arrows, five radio stations.",
+          icon: SteeringWheel,
+          modal: "island",
+        },
+        { kind: "stat", id: "places", value: `${island.found}/9`, label: "Places found" },
+        { kind: "stat", id: "arrows", value: `${island.arrows}/10`, label: "Golden arrows" },
+        ...(island.best !== null ? [{ kind: "stat", id: "race", value: raceTime(island.best), label: "Best time on the coast road" } as Card] : []),
+        { kind: "image", id: "coast", title: "The coast road", src: "/images/play/golden-hour-coast.webp", alt: "The car on the coast road at sunset, palms and the lagoon behind" },
+        { kind: "image", id: "night", title: "Ebène after dark", src: "/images/play/golden-hour-night.webp", alt: "Driving toward the lit towers of Ebène at night" },
+        { kind: "image", id: "aerial", title: "The island", src: "/images/play/golden-hour-aerial.webp", alt: "The island from the air: the lagoon, the reef, cane fields and mountains" },
+        {
+          kind: "text",
+          id: "radio",
+          title: "On the radio",
+          body: "Five stations of original music, composed as it plays: synth for the coast road, island rhythm, lo-fi, house, and a talk show about my work.",
+        },
+        {
+          kind: "controls",
+          id: "pad",
+          title: "With a controller",
+          rows: [
+            ["Triggers", "Drive and brake"],
+            ["Left stick", "Steer"],
+            ["East button", "Drift"],
+            ["D-pad", "Phone, radio"],
+            ["Centre button", "Back to home"],
+          ],
+        },
+        {
+          kind: "controls",
+          id: "keys",
+          title: "With a keyboard",
+          rows: [
+            ["W A S D", "Drive and steer"],
+            ["Space", "Drift"],
+            ["G / M / P", "GPS, map, phone"],
+            ["Q / E", "Radio"],
+          ],
+        },
+      ],
+    },
     {
       id: "game",
       label: "70 m",

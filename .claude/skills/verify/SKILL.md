@@ -113,7 +113,7 @@ old config. Restart it, or new colour and font-size utilities are missing.
   `localStorage['am-console-accounts']`; per-player milestones in
   `am-console-milestones:<id>` and best score in `am-console-best:<id>`.
   The Spotter's telling of the tiles is in `tiles.tsx` (`SPOTTER_TILES`).
-- Home: Work tab (8 tiles) and Play tab (70 m, Archery, The Spotter). Right
+- Home: Work tab (8 tiles) and Play tab (Golden Hour, 70 m, Archery, The Spotter). Right
   off the end of Work runs into Play. South button or Enter on a tile with an
   action (70 m, Contact) runs it; otherwise goes to the cards.
 - Keyboard: arrows, Enter, Esc; Q/E tabs, Home first tile, M music, T
@@ -168,3 +168,56 @@ a pass with `reducedMotion: 'reduce'`** and check for page errors.
 - The floating dark circle at bottom-left is the Next.js dev overlay.
 - Copy on the running site can differ from `lib/defaultContent.ts`: stored CMS
   values win.
+
+## Golden Hour (the island game)
+
+It is the first tile on the console's Play tab: key art, a game icon, media
+cards and progress read from its save. South on the tile (or its Play card)
+launches it full screen over the console; the pad's centre button (16), Esc on
+its title screen, or "Back to the home screen" returns to the same tile. While
+the tile is focused its car radio plays quietly as the theme. The game is
+loaded with `next/dynamic` only when launched, so the home page stays light.
+It also still has its own route, `/island`.
+
+### `/island`
+
+An original open-world take on the portfolio: a 3D island shaped like
+Mauritius (three.js, all geometry generated in `components/island/world.ts`
+and `scene.ts`), a car, nine places (projects, toolbox as a garage, the
+process as a coast-road race, the archery range, contact), ten golden
+arrows, a phone, a full map with GPS routing over the road graph, and a car
+radio of five synthesised stations (`audio.ts`; presenters use
+`speechSynthesis`). Not linked from the console and `noindex`. It must stay
+original: no other game's name, logo, characters, art, music or fonts.
+
+- Loading takes about 4 to 7 s (generation runs on the main thread, with a
+  real progress bar). Wait for "press any button" in lower case via
+  `innerText.toLowerCase()`: the title is uppercase by CSS.
+- `window.__island` is the engine: `teleport(x, z, heading)`, `setHour(h)`,
+  `hud()`, `world.pois`, `world.graph`. Teleport to a road node, not beside a
+  marker, or the car can land in the sea.
+- Progress lives in `localStorage['am-island-v1']`; clear it for a first run.
+- Fake pad: same as the console's. R2 (button 7 value) drives, left stick
+  steers, d-pad up opens the phone, View (8) the map, d-pad left/right tunes
+  the radio. Driving and pickups call the shared `rumble()`.
+
+## Vibration and the on-screen keyboard (console)
+
+- `rumble()` in `useGamepad.ts` sends to every connected pad that can
+  vibrate (Windows often lists a virtual copy first that cannot), and lifts
+  very short or light effects to something a hand can feel. It never skips a
+  pad for an empty `effects` list: some Chromium builds report none for pads
+  that rumble fine.
+- Chrome gives a PS5 controller (DualSense, vendor 054c) no
+  `vibrationActuator` at all. `dualsense.ts` sends its rumble and light bar
+  straight to it over WebHID, USB only: report 0x02 at the size the device
+  declares (47 bytes on Windows). Permission comes once from "Turn on
+  vibration" in the quick menu (a click or key, never a pad button) and the
+  device is reopened silently after that. Over Bluetooth nothing reached the
+  controller in testing (any report, either size or checksum position), and
+  reading its calibration report switches it to a mode Chrome cannot read
+  the buttons from, so do not send it anything over Bluetooth.
+- Selecting a text field in a console dialog with the pad opens
+  `PadKeyboard`: d-pad moves, south types, west deletes, north is space, L2
+  capitals, L1/R1 move the cursor, R2 or Menu is done, east closes. It writes
+  to the field through the native value setter, so React's onChange fires.
