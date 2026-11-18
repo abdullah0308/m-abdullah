@@ -1,274 +1,166 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useEffect, useState } from "react";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
+import { AnimatePresence, motion, useMotionValueEvent, useScroll } from "framer-motion";
+import { ArrowUpRight } from "@phosphor-icons/react/dist/ssr";
+import { NAV_LINKS } from "@/lib/defaultContent";
+import { SECTION_IDS, useActiveSection } from "@/lib/useActiveSection";
+import { FLOCON_POSES } from "@/components/flocon/assets";
+import { EASE } from "@/components/ui/Reveal";
+import ThemeToggle from "./ThemeToggle";
+import VoiceSwitch from "./VoiceSwitch";
+import Logo from "./Logo";
 
-/* ── Archery-themed icon set (mobile drawer) ── */
-const IconAbout = () => (
-  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="8" r="4" />
-    <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
-  </svg>
-);
-const IconProcess = () => (
-  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="9" />
-    <circle cx="12" cy="12" r="4.5" />
-    <circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none" />
-  </svg>
-);
-const IconSkills = () => (
-  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="16 18 22 12 16 6" />
-    <polyline points="8 6 2 12 8 18" />
-  </svg>
-);
-const IconArchery = () => (
-  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M6 3c0 10 0 10 0 18" />
-    <path d="M6 3c6 2.5 6 13.5 0 18" />
-    <line x1="8" y1="12" x2="19" y2="12" />
-    <polyline points="16 9 19 12 16 15" />
-  </svg>
-);
-const IconContact = () => (
-  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="2" y="5" width="20" height="14" rx="2" />
-    <polyline points="2 8 12 14 22 8" />
-  </svg>
-);
-
-const navLinks = [
-  { label: "About",       href: "#about",   Icon: IconAbout   },
-  { label: "How I Think", href: "#process", Icon: IconProcess },
-  { label: "Skills",      href: "#skills",  Icon: IconSkills  },
-  { label: "Archery",     href: "#archery", Icon: IconArchery },
-  { label: "Contact",     href: "#contact", Icon: IconContact },
-];
-
-const PILL_SHADOW = [
-  "0 1px 0 rgba(255,255,255,0.07) inset",
-  "0 -1px 0 rgba(0,0,0,0.55) inset",
-  "0 0 0 1px rgba(80,232,244,0.13)",
-  "0 4px 6px rgba(0,0,0,0.35)",
-  "0 14px 40px rgba(0,0,0,0.55)",
-  "0 0 36px rgba(80,232,244,0.05)",
-].join(", ");
-
-const easeOut = [0.22, 1, 0.36, 1] as const;
-
+/**
+ * A plain bar: the mark on the left, the six stops as text links (the current
+ * one underlined in the accent), then the narrator switch, the theme toggle
+ * and the one contact action. It is transparent over the hero and takes a
+ * blurred backing once the page moves.
+ *
+ * Below lg the links move into a full-screen sheet set in the poster type.
+ */
 export default function Navigation() {
-  const [activeSection, setActiveSection] = useState("");
-  const [hovered,       setHovered]       = useState<string | null>(null);
-  const [mobileOpen,    setMobileOpen]    = useState(false);
+  const active = useActiveSection(SECTION_IDS);
+  const admin = usePathname()?.startsWith("/admin") ?? false;
+  const [scrolled, setScrolled] = useState(false);
+  const [open, setOpen] = useState(false);
+  const { scrollY } = useScroll();
 
-  // Clear active highlight when back near the top (hero)
+  useMotionValueEvent(scrollY, "change", (y) => setScrolled(y > 24));
+
+  // The sheet owns the viewport; scrolling the page behind it leaves you
+  // somewhere unexpected when it closes.
   useEffect(() => {
-    const onScroll = () => { if (window.scrollY < 80) setActiveSection(""); };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => entries.forEach((e) => { if (e.isIntersecting) setActiveSection(e.target.id); }),
-      { threshold: 0.3, rootMargin: "-60px 0px -60px 0px" }
-    );
-    navLinks.forEach(({ href }) => {
-      const el = document.getElementById(href.replace("#", ""));
-      if (el) observer.observe(el);
-    });
-    return () => observer.disconnect();
-  }, []);
-
-  const handleLink = (href: string) => {
-    setMobileOpen(false);
-    setTimeout(() => {
-      document.getElementById(href.replace("#", ""))?.scrollIntoView({ behavior: "smooth" });
-    }, 260);
-  };
+    document.body.style.overflow = open ? "hidden" : "";
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = "";
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
 
   return (
     <>
-      {/* ── Logo, standalone in the top-left corner ── */}
-      <motion.button
-        onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-        className="fixed top-5 left-6 z-50 hidden md:block"
-        aria-label="Go to top"
-        initial={{ opacity: 0, y: -14 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.7, ease: easeOut, delay: 0.1 }}
-        whileHover={{ scale: 1.07 }}
-        whileTap={{ scale: 0.96 }}
-        style={{ filter: "drop-shadow(0 4px 14px rgba(0,0,0,0.6))" }}
-      >
-        <Image src="/images/AM Logo.svg" alt="AM" width={63} height={32} className="h-8 w-auto" />
-      </motion.button>
-
-      {/* ── Desktop glass nav ── */}
-      <motion.div
-        className="fixed top-5 left-1/2 z-50 hidden md:block w-max"
-        initial={{ x: "-50%", y: -28, opacity: 0 }}
-        animate={{ x: "-50%", y: 0, opacity: 1 }}
-        transition={{ duration: 0.8, ease: easeOut, delay: 0.25 }}
+      <header
+        className={`fixed inset-x-0 top-0 z-50 border-b transition-colors duration-500 ${
+          scrolled ? "border-line bg-ink/80 backdrop-blur-md" : "border-transparent"
+        }`}
       >
         <nav
-          className="relative flex items-center h-[52px] px-2 select-none"
-          style={{
-            borderRadius: 9999,
-            background: "linear-gradient(180deg, rgba(18,32,44,0.92) 0%, rgba(5,12,20,0.96) 100%)",
-            boxShadow: PILL_SHADOW,
-          }}
+          aria-label="Primary"
+          className="mx-auto flex h-[4.25rem] max-w-[1760px] items-center justify-between gap-4 px-4 sm:px-8 lg:px-12"
         >
-          {/* soft teal edge glows */}
-          <div
-            className="absolute left-0 top-0 bottom-0 w-24 pointer-events-none"
-            style={{ background: "radial-gradient(ellipse at left center, rgba(80,232,244,0.16) 0%, transparent 75%)", borderRadius: "9999px 0 0 9999px" }}
-          />
-          <div
-            className="absolute right-0 top-0 bottom-0 w-24 pointer-events-none"
-            style={{ background: "radial-gradient(ellipse at right center, rgba(80,232,244,0.12) 0%, transparent 75%)", borderRadius: "0 9999px 9999px 0" }}
-          />
+          <a href="#top" className="text-content" aria-label="Back to top">
+            <Logo className="h-7 w-7" />
+          </a>
 
-          <ul className="relative flex items-center">
-            {navLinks.map(({ label, href }) => {
-              const id = href.replace("#", "");
-              const isActive = activeSection === id;
+          <ul className="hidden items-center gap-7 lg:flex">
+            {NAV_LINKS.map(({ label, href }) => {
+              const isActive = active === href.slice(1);
               return (
-                <li key={label} className="relative">
-                  <button
-                    onClick={() => handleLink(href)}
-                    onMouseEnter={() => setHovered(id)}
-                    onMouseLeave={() => setHovered(null)}
-                    className="group relative px-5 py-4"
+                <li key={href}>
+                  <a
+                    href={href}
+                    aria-current={isActive ? "true" : undefined}
+                    className={`relative py-2 text-sm transition-colors ${
+                      isActive ? "text-content" : "text-muted hover:text-content"
+                    }`}
                   >
-                    {/* morphing hover highlight — glides between items */}
-                    <AnimatePresence>
-                      {hovered === id && (
-                        <motion.span
-                          layoutId="nav-hover"
-                          className="absolute inset-x-0.5 inset-y-2"
-                          style={{
-                            borderRadius: 9999,
-                            background: "rgba(80,232,244,0.09)",
-                            boxShadow: "inset 0 0 0 1px rgba(80,232,244,0.14)",
-                          }}
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          exit={{ opacity: 0, transition: { duration: 0.18 } }}
-                          transition={{ type: "spring", stiffness: 420, damping: 32 }}
-                        />
-                      )}
-                    </AnimatePresence>
-
-                    {/* rolling label */}
-                    <span className="relative block overflow-hidden leading-none">
-                      <span
-                        className={`block text-[11px] font-mono uppercase tracking-[0.16em] leading-none whitespace-nowrap transition-transform duration-300 ease-out group-hover:-translate-y-[110%] ${
-                          isActive ? "text-gold" : "text-white/60"
-                        }`}
-                      >
-                        {label}
-                      </span>
-                      <span
-                        aria-hidden
-                        className="absolute inset-x-0 top-[110%] block text-[11px] font-mono uppercase tracking-[0.16em] leading-none whitespace-nowrap text-gold-light transition-transform duration-300 ease-out group-hover:-translate-y-[110%]"
-                      >
-                        {label}
-                      </span>
-                    </span>
-
-                    {/* sliding active dot */}
+                    {label}
                     {isActive && (
                       <motion.span
-                        layoutId="nav-active"
-                        className="absolute bottom-[7px] h-[3px] w-[3px] rounded-full"
-                        style={{ left: "50%", marginLeft: -1.5, background: "#50E8F4", boxShadow: "0 0 8px rgba(80,232,244,1)" }}
-                        transition={{ type: "spring", stiffness: 450, damping: 32 }}
+                        layoutId="nav-mark"
+                        className="absolute inset-x-0 -bottom-0.5 h-0.5 bg-accent"
+                        transition={{ type: "spring", stiffness: 380, damping: 32 }}
                       />
                     )}
-                  </button>
+                  </a>
                 </li>
               );
             })}
           </ul>
+
+          <div className="flex items-center gap-2">
+            {!admin && <VoiceSwitch />}
+            <ThemeToggle />
+            <a
+              href="#contact"
+              className="hidden h-11 items-center gap-2 rounded-full bg-accent pl-5 pr-4 text-sm font-medium text-onAccent transition-transform active:scale-[0.98] md:inline-flex"
+            >
+              Get in touch
+              <ArrowUpRight size={14} weight="bold" />
+            </a>
+            <button
+              type="button"
+              onClick={() => setOpen(true)}
+              aria-label="Open menu"
+              aria-expanded={open}
+              className="flex h-11 items-center gap-2.5 rounded-full border border-line2 bg-surface/80 px-4 text-sm text-content backdrop-blur lg:hidden"
+            >
+              Menu
+              <span aria-hidden className="grid gap-[5px]">
+                <span className="block h-px w-4 bg-current" />
+                <span className="block h-px w-4 bg-current" />
+              </span>
+            </button>
+          </div>
         </nav>
-      </motion.div>
+      </header>
 
-      {/* ── Mobile compact pill ── */}
-      <div className="fixed top-4 left-4 right-4 z-50 md:hidden">
-        <div
-          className="relative flex items-center justify-between h-[50px] px-5"
-          style={{
-            borderRadius: 9999,
-            background: "linear-gradient(180deg, #0f1d2c 0%, #060e18 100%)",
-            boxShadow: PILL_SHADOW,
-          }}
-        >
-          {/* Left glow */}
-          <div className="absolute left-0 top-0 bottom-0 w-16 pointer-events-none"
-            style={{ background: "radial-gradient(ellipse at left center, rgba(80,232,244,0.2) 0%, transparent 75%)", borderRadius: "9999px 0 0 9999px" }} />
-
-          <button onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} className="shrink-0">
-            <Image src="/images/AM Logo.svg" alt="AM" width={47} height={24} className="h-6 w-auto" />
-          </button>
-
-          {/* Hamburger */}
-          <button
-            onClick={() => setMobileOpen((v) => !v)}
-            className="flex flex-col gap-[5px] p-1 shrink-0"
-            aria-label="Toggle menu"
-          >
-            <motion.span className="block h-px w-5 bg-white/70" animate={mobileOpen ? { rotate: 45, y: 6 } : { rotate: 0, y: 0 }} transition={{ duration: 0.2 }} />
-            <motion.span className="block h-px w-5 bg-white/70" animate={mobileOpen ? { opacity: 0 } : { opacity: 1 }} transition={{ duration: 0.2 }} />
-            <motion.span className="block h-px w-5 bg-white/70" animate={mobileOpen ? { rotate: -45, y: -6 } : { rotate: 0, y: 0 }} transition={{ duration: 0.2 }} />
-          </button>
-        </div>
-      </div>
-
-      {/* ── Mobile drawer ── */}
       <AnimatePresence>
-        {mobileOpen && (
+        {open && (
           <motion.div
-            initial={{ opacity: 0, y: -8, scale: 0.97 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -8, scale: 0.97 }}
-            transition={{ duration: 0.22, ease: "easeOut" }}
-            className="fixed top-20 left-4 right-4 z-50 md:hidden"
-            style={{
-              borderRadius: 16,
-              background: "linear-gradient(180deg, #0f1d2c 0%, #060e18 100%)",
-              boxShadow: PILL_SHADOW,
-              border: "1px solid rgba(80,232,244,0.1)",
-            }}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Menu"
+            className="fixed inset-0 z-[70] flex flex-col overflow-hidden bg-ink px-4 pb-8 sm:px-8"
+            initial={{ clipPath: "inset(0 0 100% 0)" }}
+            animate={{ clipPath: "inset(0 0 0% 0)" }}
+            exit={{ clipPath: "inset(0 0 100% 0)" }}
+            transition={{ duration: 0.6, ease: EASE }}
           >
-            <ul className="flex flex-col py-3">
-              {navLinks.map(({ label, href, Icon }, i) => {
-                const id = href.replace("#", "");
-                const isActive = activeSection === id;
-                return (
-                  <motion.li
-                    key={label}
-                    initial={{ opacity: 0, x: -14 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.05 + i * 0.05, duration: 0.3, ease: "easeOut" }}
+            <div className="flex h-[4.25rem] shrink-0 items-center justify-between">
+              <Logo className="h-7 w-7" />
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                aria-label="Close menu"
+                className="flex h-11 items-center gap-2.5 rounded-full border border-line2 px-4 text-sm"
+              >
+                Close
+                <span aria-hidden className="relative block h-4 w-4">
+                  <span className="absolute left-0 top-1/2 block h-px w-4 rotate-45 bg-current" />
+                  <span className="absolute left-0 top-1/2 block h-px w-4 -rotate-45 bg-current" />
+                </span>
+              </button>
+            </div>
+
+            <ul className="mt-6">
+              {[...NAV_LINKS, { label: "Get in touch", href: "#contact" }].map(({ label, href }, i) => (
+                <li key={href} className="overflow-hidden">
+                  <motion.a
+                    href={href}
+                    onClick={() => setOpen(false)}
+                    className={`mega block py-[0.06em] text-[clamp(2.9rem,15.5vw,6rem)] ${
+                      href === "#contact" ? "ink-accent" : "text-content"
+                    }`}
+                    initial={{ y: "110%" }}
+                    animate={{ y: 0 }}
+                    transition={{ delay: 0.18 + i * 0.05, duration: 0.6, ease: EASE }}
                   >
-                    <button
-                      onClick={() => handleLink(href)}
-                      className="w-full flex items-center gap-4 px-6 py-4 transition-colors duration-150"
-                      style={{ color: isActive ? "#50E8F4" : "rgba(255,255,255,0.55)" }}
-                    >
-                      <Icon />
-                      <span className="text-sm tracking-wide">{label}</span>
-                      {isActive && (
-                        <div className="ml-auto w-1.5 h-1.5 rounded-full" style={{ background: "#50E8F4", boxShadow: "0 0 6px rgba(80,232,244,0.8)" }} />
-                      )}
-                    </button>
-                  </motion.li>
-                );
-              })}
+                    {label}
+                  </motion.a>
+                </li>
+              ))}
             </ul>
+
+            {/* Flocon at the bottom edge of the sheet, half out of frame. */}
+            <div aria-hidden className="pointer-events-none absolute -bottom-24 right-4 w-36">
+              <Image src={FLOCON_POSES.q34.src} alt="" width={FLOCON_POSES.q34.w} height={FLOCON_POSES.q34.h} />
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

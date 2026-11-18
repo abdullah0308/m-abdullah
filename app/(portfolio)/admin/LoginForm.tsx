@@ -33,8 +33,8 @@ export default function LoginForm() {
       <div className="w-full max-w-sm">
         <div className="mb-10">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-8 h-px bg-gold" />
-            <span className="font-mono text-xs tracking-[0.3em] uppercase text-gold">Edit Mode</span>
+            <div className="w-8 h-px bg-accent" />
+            <span className="font-mono text-xs tracking-[0.3em] uppercase text-accentInk">Edit Mode</span>
           </div>
           <h1 className="font-display text-3xl font-bold text-white">Sign in</h1>
           <p className="text-white/40 text-sm mt-2 font-mono">to edit your portfolio content</p>
@@ -51,7 +51,7 @@ export default function LoginForm() {
               onChange={(e) => setEmail(e.target.value)}
               required
               autoComplete="email"
-              className="w-full bg-white/5 border border-white/10 text-white px-4 py-3 font-mono text-sm focus:outline-none focus:border-gold/60 transition-colors"
+              className="w-full bg-white/5 border border-white/10 text-white px-4 py-3 font-mono text-sm focus:outline-none focus:border-accent/60 transition-colors"
               placeholder="you@example.com"
             />
           </div>
@@ -66,7 +66,7 @@ export default function LoginForm() {
               onChange={(e) => setPassword(e.target.value)}
               required
               autoComplete="current-password"
-              className="w-full bg-white/5 border border-white/10 text-white px-4 py-3 font-mono text-sm focus:outline-none focus:border-gold/60 transition-colors"
+              className="w-full bg-white/5 border border-white/10 text-white px-4 py-3 font-mono text-sm focus:outline-none focus:border-accent/60 transition-colors"
               placeholder="••••••••"
             />
           </div>
@@ -78,7 +78,7 @@ export default function LoginForm() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-gold text-black font-mono text-xs tracking-[0.25em] uppercase py-4 hover:bg-gold/90 transition-colors disabled:opacity-50"
+            className="w-full bg-accent text-black font-mono text-xs tracking-[0.25em] uppercase py-4 hover:bg-accent/90 transition-colors disabled:opacity-50"
           >
             {loading ? 'Signing in…' : 'Sign In'}
           </button>

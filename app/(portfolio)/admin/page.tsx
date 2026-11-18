@@ -1,5 +1,5 @@
 import { cookies } from 'next/headers'
-import { defaultContent } from '@/lib/defaultContent'
+import { mergeContent } from '@/lib/mergeContent'
 import EditModePage from './EditModePage'
 import LoginForm from './LoginForm'
 import type { ContentData } from '@/lib/defaultContent'
@@ -9,7 +9,7 @@ import config from '@payload-config'
 async function getAuthUser(token: string) {
   try {
     const payload = await getPayload({ config })
-    // Use Payload's own JWT strategy — same logic as internal auth
+    // Use Payload's own JWT strategy, same logic as internal auth
     const { jwtVerify } = await import('jose')
     const secretKey = new TextEncoder().encode(payload.secret)
     const { payload: decoded } = await jwtVerify(token, secretKey)
@@ -29,9 +29,11 @@ async function getContent(): Promise<ContentData> {
   try {
     const payload = await getPayload({ config })
     const global = await payload.findGlobal({ slug: 'site-content' })
-    return (global.data as ContentData) ?? defaultContent
+    // Merged over the defaults, like the public page, so keys added since
+    // the content was last saved (Flocon, the companion lines) are editable.
+    return mergeContent(global.data)
   } catch {
-    return defaultContent
+    return mergeContent(undefined)
   }
 }
 

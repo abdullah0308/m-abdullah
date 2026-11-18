@@ -1,123 +1,74 @@
 "use client";
 
-import { useRef, useEffect, type ReactNode } from "react";
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { SplitText } from "gsap/SplitText";
+import { motion } from "framer-motion";
+import { useSiteContent } from "@/context/SiteContext";
+import { useCopy } from "@/lib/useCopy";
+import { useReduceMotion } from "@/lib/useReduceMotion";
+import EditableText from "./EditableText";
+import { EASE } from "./Reveal";
 
-gsap.registerPlugin(ScrollTrigger, SplitText);
-
-/** Plays once on entry and never resets or replays. */
-const PLAY_ONCE: ScrollTrigger.Vars["toggleActions"] = "play none none none";
-
-interface RevealTextProps {
-  children: ReactNode;
-  /**
-   * heading — masked line-by-line rise (SplitText), staggered
-   * body    — elegant float-up with soft blur-out
-   * label   — slides from left, tight and quick
-   */
-  variant?: "heading" | "body" | "label";
-  delay?: number;
-  className?: string;
-}
-
+/**
+ * Headline text animation: each word rises out of its own mask, staggered,
+ * every time the line comes into view (it resets when it leaves, so it
+ * replays on the way back down).
+ *
+ * Reads its string from content by `path`, in the current narrator's voice,
+ * and falls back to EditableText inside /admin so editing never fights the
+ * split spans. Screen readers get the sentence once, not word by word.
+ *
+ * Pass `active` to drive it by hand instead of by scroll position (the hero
+ * waits for the intro curtain that way).
+ */
 export default function RevealText({
-  children,
-  variant = "body",
+  path,
+  className = "",
   delay = 0,
-  className,
-}: RevealTextProps) {
-  const wrapRef  = useRef<HTMLDivElement>(null);
-  const innerRef = useRef<HTMLDivElement>(null);
+  active,
+}: {
+  path: string;
+  className?: string;
+  delay?: number;
+  active?: boolean;
+}) {
+  const { isEditing } = useSiteContent();
+  const reduce = useReduceMotion();
+  const text = useCopy(path);
 
-  useEffect(() => {
-    const wrap  = wrapRef.current;
-    const inner = innerRef.current;
-    if (!wrap || !inner) return;
+  if (isEditing) return <EditableText path={path} className={className} />;
 
-    const st: ScrollTrigger.Vars = {
-      trigger: wrap,
-      start: "top 88%",
-      toggleActions: PLAY_ONCE,
-    };
-
-    let cancelled = false;
-    let split: SplitText | null = null;
-    let tween: gsap.core.Tween | null = null;
-
-    // Splitting rewrites the DOM — never do it over contenteditable (edit mode)
-    const editable = inner.querySelector("[contenteditable]") !== null;
-
-    if (variant === "heading" && !editable) {
-      // Wait for fonts so line breaks are measured correctly
-      document.fonts.ready.then(() => {
-        if (cancelled) return;
-        split = SplitText.create(inner, {
-          type: "lines",
-          mask: "lines",
-          linesClass: "rt-line",
-          autoSplit: true,
-          onSplit: (self) =>
-            gsap.from(self.lines, {
-              yPercent: 115,
-              duration: 0.85,
-              stagger: 0.09,
-              ease: "power4.out",
-              delay,
-              scrollTrigger: { ...st },
-            }),
-        });
-        ScrollTrigger.refresh();
-      });
-    } else if (variant === "heading") {
-      // Edit-mode fallback: whole-block clip reveal, DOM untouched
-      tween = gsap.fromTo(
-        inner,
-        { yPercent: 110 },
-        { yPercent: 0, duration: 0.8, ease: "power4.out", delay, scrollTrigger: { ...st } }
-      );
-    } else if (variant === "label") {
-      tween = gsap.fromTo(
-        inner,
-        { x: -24, opacity: 0 },
-        { x: 0, opacity: 1, duration: 0.55, ease: "power3.out", delay, scrollTrigger: { ...st } }
-      );
-    } else {
-      tween = gsap.fromTo(
-        inner,
-        { y: 36, opacity: 0, filter: "blur(6px)" },
-        {
-          y: 0,
-          opacity: 1,
-          filter: "blur(0px)",
-          duration: 0.7,
-          ease: "power3.out",
-          delay,
-          scrollTrigger: { ...st },
-        }
-      );
-    }
-
-    return () => {
-      cancelled = true;
-      tween?.scrollTrigger?.kill();
-      tween?.kill();
-      split?.revert();
-    };
-  }, [variant, delay]);
-
-  if (variant === "heading") {
-    return (
-      <div ref={wrapRef} className={`overflow-hidden ${className ?? ""}`}>
-        <div ref={innerRef}>{children}</div>
-      </div>
-    );
-  }
+  const words = text.split(/\s+/).filter(Boolean);
+  const manual = active !== undefined;
 
   return (
-    <div ref={wrapRef} className={className}>
-      <div ref={innerRef}>{children}</div>
-    </div>
+    <motion.span
+      // a new narrator means new words: remount so they rise in again
+      key={text}
+      className={className}
+      initial={reduce ? false : "hidden"}
+      whileInView={reduce || manual ? undefined : "show"}
+      // reduced motion resolves a render after mount: force the words visible
+      animate={reduce ? "still" : manual ? (active ? "show" : "hidden") : undefined}
+      viewport={{ once: false, amount: 0.4 }}
+    >
+      <span className="sr-only">{text}</span>
+      {words.map((w, i) => (
+        <span key={`${w}-${i}`} aria-hidden>
+          {/* padding keeps commas and accents clear of the mask */}
+          <span className="-my-[0.14em] inline-block overflow-hidden py-[0.14em] align-bottom">
+            <motion.span
+              className="inline-block"
+              variants={{
+                hidden: { y: "120%" },
+                still: { y: "0%", transition: { duration: 0 } },
+                show: { y: "0%", transition: { duration: 0.8, ease: EASE, delay: delay + i * 0.05 } },
+              }}
+            >
+              {w}
+            </motion.span>
+          </span>
+          {i < words.length - 1 ? " " : null}
+        </span>
+      ))}
+    </motion.span>
   );
 }

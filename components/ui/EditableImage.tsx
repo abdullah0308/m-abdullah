@@ -80,7 +80,7 @@ export default function EditableImage({
         onClick={() => inputRef.current?.click()}
         title="Click to change image"
       >
-        <span className="bg-gold text-black font-mono text-xs tracking-widest uppercase px-4 py-2 pointer-events-none">
+        <span className="bg-accent text-black font-mono text-xs tracking-widest uppercase px-4 py-2 pointer-events-none">
           Change Image
         </span>
       </button>

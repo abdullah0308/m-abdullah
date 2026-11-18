@@ -3,7 +3,7 @@ Allow: /
 Disallow: /admin
 Disallow: /api/
 
-# AI crawlers — allow for indexing
+# AI crawlers: allow for indexing
 User-agent: GPTBot
 Allow: /
 

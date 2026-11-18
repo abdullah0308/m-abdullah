@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react'
 import { useSiteContent } from '@/context/SiteContext'
 import { getPath } from '@/lib/contentUtils'
+import { useCopy } from '@/lib/useCopy'
 
 interface Props {
   path: string
@@ -15,19 +16,21 @@ export default function EditableText({ path, className = '', tag = 'span' }: Pro
   const Tag = tag as any
   const { content, isEditing, updateContent } = useSiteContent()
   const value = String(getPath(content as unknown as Record<string, unknown>, path) ?? '')
+  // What visitors read: Flocon's telling when she is narrating and has one.
+  const spoken = useCopy(path)
   const ref = useRef<HTMLElement>(null)
   const lastSavedRef = useRef(value)
 
   // Sync DOM when content changes externally (not while user is typing)
   useEffect(() => {
-    if (ref.current && document.activeElement !== ref.current) {
+    if (isEditing && ref.current && document.activeElement !== ref.current) {
       ref.current.textContent = value
       lastSavedRef.current = value
     }
-  }, [value])
+  }, [value, isEditing])
 
   if (!isEditing) {
-    return <Tag className={className}>{value}</Tag>
+    return <Tag className={className}>{spoken}</Tag>
   }
 
   return (
@@ -35,7 +38,7 @@ export default function EditableText({ path, className = '', tag = 'span' }: Pro
       ref={ref}
       contentEditable
       suppressContentEditableWarning
-      className={`${className} cursor-text outline-none ring-1 ring-inset ring-gold/50 rounded-[1px] transition-shadow focus:ring-2 focus:ring-gold`}
+      className={`${className} cursor-text outline-none ring-1 ring-inset ring-accent/50 rounded-[1px] transition-shadow focus:ring-2 focus:ring-accent`}
       onFocus={() => {
         lastSavedRef.current = ref.current?.textContent ?? ''
       }}

@@ -1,42 +1,37 @@
 import type { Metadata } from "next";
-import { Space_Grotesk } from "next/font/google";
+import { Archivo } from "next/font/google";
 import localFont from "next/font/local";
 import Script from "next/script";
 import "../globals.css";
-import CustomCursor from "@/components/layout/CustomCursor";
-import Navigation from "@/components/layout/Navigation";
-import WebGLBackground from "@/components/layout/WebGLBackground";
+import Shell from "@/components/layout/Shell";
+import { THEME_INIT_SCRIPT } from "@/context/ThemeContext";
 
-const spaceGrotesk = Space_Grotesk({
+/**
+ * Three faces, one job each:
+ *   Archivo     display only. Its width axis gives the condensed poster
+ *               capitals (62%) and the wider sentence-case headings (87%).
+ *   Geist       every UI and body string.
+ *   Geist Mono  labels, spec-sheet values, and numbers.
+ */
+const display = Archivo({
   subsets: ["latin"],
-  variable: "--font-space-grotesk",
+  variable: "--font-display",
+  axes: ["wdth"],
+  // Poster type in a fallback face is far wider and reflows the hero, so the
+  // display face blocks briefly instead of swapping in late.
+  display: "block",
 });
 
-const geistMono = localFont({
+const body = localFont({
+  src: "../fonts/GeistVF.woff",
+  variable: "--font-body",
+  display: "swap",
+});
+
+const mono = localFont({
   src: "../fonts/GeistMonoVF.woff",
-  variable: "--font-geist-mono",
-});
-
-const afterFont = localFont({
-  src: "../fonts/after-regular.otf",
-  variable: "--font-after",
-});
-
-const yapariFont = localFont({
-  src: [
-    { path: "../fonts/YapariTrial-ExtraLight.ttf", weight: "200", style: "normal" },
-    { path: "../fonts/YapariTrial-Light.ttf",      weight: "300", style: "normal" },
-    { path: "../fonts/YapariTrial-Regular.ttf",    weight: "400", style: "normal" },
-    { path: "../fonts/YapariTrial-Medium.ttf",     weight: "500", style: "normal" },
-    { path: "../fonts/YapariTrial-SemiBold.ttf",   weight: "600", style: "normal" },
-    { path: "../fonts/YapariTrial-Bold.ttf",       weight: "700", style: "normal" },
-  ],
-  variable: "--font-yapari",
-});
-
-const langitsFont = localFont({
-  src: "../fonts/langits.otf",
-  variable: "--font-langits",
+  variable: "--font-mono",
+  display: "swap",
 });
 
 const SITE_URL = process.env.NEXT_PUBLIC_SERVER_URL ?? "https://abdullahmohamed.dev";
@@ -45,7 +40,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
 
   title: {
-    default: "Abdullah Mohamed — Web Developer in Mauritius",
+    default: "Abdullah Mohamed | Web Developer in Mauritius",
     template: "%s | Abdullah Mohamed",
   },
   description:
@@ -93,8 +88,8 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_MU",
     url: SITE_URL,
-    siteName: "Abdullah Mohamed — Web Developer",
-    title: "Abdullah Mohamed — Web Developer in Mauritius",
+    siteName: "Abdullah Mohamed | Web Developer",
+    title: "Abdullah Mohamed | Web Developer in Mauritius",
     description:
       "Web developer based in Mauritius. I build fast, modern websites and web applications with Next.js, React, and Tailwind CSS.",
     images: [
@@ -102,20 +97,20 @@ export const metadata: Metadata = {
         url: "/images/og-image.jpeg",
         width: 1200,
         height: 630,
-        alt: "Abdullah Mohamed — Web Developer in Mauritius",
+        alt: "Abdullah Mohamed | Web Developer in Mauritius",
       },
     ],
   },
 
   twitter: {
     card: "summary_large_image",
-    title: "Abdullah Mohamed — Web Developer in Mauritius",
+    title: "Abdullah Mohamed | Web Developer in Mauritius",
     description:
       "Web developer based in Mauritius. I build fast, modern websites and web applications with Next.js, React, and Tailwind CSS.",
     images: ["/images/og-image.jpeg"],
   },
 
-  // Favicon source of truth: public/favicon.svg — swap it and run `npm run favicons`
+  // Favicon source of truth: public/favicon.svg, swap it and run `npm run favicons`
   icons: {
     icon: [
       { url: "/favicon.svg", type: "image/svg+xml" },
@@ -133,9 +128,20 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${spaceGrotesk.variable} ${geistMono.variable} ${afterFont.variable} ${yapariFont.variable} ${langitsFont.variable}`}
+      // The inline script below stamps data-theme on this element before
+      // React hydrates, so the server markup and the DOM legitimately differ.
+      suppressHydrationWarning
+      className={`${display.variable} ${body.variable} ${mono.variable}`}
     >
-      <body className="bg-charcoal-deep text-white antialiased">
+      <head>
+        {/*
+          Must run before first paint, so it is a raw inline script rather than
+          next/script, any strategy other than beforeInteractive would let the
+          default palette paint first and then swap.
+        */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+      </head>
+      <body className="grain bg-ink text-content antialiased">
         <Script
           id="posthog-init"
           strategy="afterInteractive"
@@ -197,7 +203,7 @@ export default function RootLayout({
                   "@type": "WebSite",
                   "@id": `${SITE_URL}/#website`,
                   url: SITE_URL,
-                  name: "Abdullah Mohamed — Web Developer",
+                  name: "Abdullah Mohamed | Web Developer",
                   description:
                     "Portfolio of Abdullah Mohamed, web developer based in Mauritius",
                   publisher: { "@id": `${SITE_URL}/#person` },
@@ -207,7 +213,7 @@ export default function RootLayout({
                   "@type": "WebPage",
                   "@id": `${SITE_URL}/#webpage`,
                   url: SITE_URL,
-                  name: "Abdullah Mohamed — Web Developer in Mauritius",
+                  name: "Abdullah Mohamed | Web Developer in Mauritius",
                   isPartOf: { "@id": `${SITE_URL}/#website` },
                   about: { "@id": `${SITE_URL}/#person` },
                   description:
@@ -228,16 +234,7 @@ export default function RootLayout({
             }),
           }}
         />
-        <WebGLBackground />
-        <CustomCursor />
-        <Navigation />
-        {/*
-          relative + z-10: without an explicit stacking context, section
-          content can fail to paint above the fixed WebGL background canvas
-          (a compositor quirk with its continuous rAF redraw) — confirmed by
-          disappearing text in the Process section that was fixed by this.
-        */}
-        <main className="relative z-10">{children}</main>
+        <Shell>{children}</Shell>
       </body>
     </html>
   );

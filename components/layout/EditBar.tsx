@@ -19,7 +19,7 @@ export default function EditBar() {
   }
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-[9999] h-11 bg-gold flex items-center justify-between px-6">
+    <div className="fixed top-0 left-0 right-0 z-[9999] h-11 bg-accent flex items-center justify-between px-6">
       <div className="flex items-center gap-3">
         <span className="w-2 h-2 rounded-full bg-black/50 animate-pulse" />
         <span className="font-mono text-xs font-bold tracking-[0.25em] uppercase text-black">
@@ -28,7 +28,7 @@ export default function EditBar() {
         <span className="font-mono text-xs tracking-widest transition-opacity duration-300">
           {saveStatus === 'saving' && <span className="text-black/50">· Saving…</span>}
           {saveStatus === 'saved' && <span className="text-black/70">· Saved ✓</span>}
-          {saveStatus === 'error' && <span className="text-red-700">· Save failed — check console</span>}
+          {saveStatus === 'error' && <span className="text-red-700">· Save failed, check console</span>}
         </span>
       </div>
       <div className="flex items-center gap-4">

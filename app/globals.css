@@ -2,69 +2,610 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --gold: #50E8F4;
-  --gold-light: #C7F8FE;
-  --charcoal: #001619;
-  --surface: #001f24;
+/*
+  ---------------------------------------------------------------------------
+  ONE DESIGN, TWO PALETTES, TWO NARRATORS
+  ---------------------------------------------------------------------------
+  `html[data-theme="dark|light"]` picks the palette. ThemeProvider writes it,
+  and an inline script in the layout writes it again before first paint so a
+  returning visitor never sees the wrong palette flash.
 
-  --color-bg: #001619;
-  --color-text: #FFFFFF;
-  --color-muted: #5bc4cc;
-  --color-line: rgba(80, 232, 244, 0.07);
-  --color-surface: #001f24;
-  --color-accent: #50E8F4;
+  `html[data-voice="cat"]` is set while Flocon is narrating (VoiceContext).
+  It swaps the single accent from her ginger coat to her green eyes, so the
+  whole page visibly changes hands.
+
+  Values are raw "R G B" triplets so Tailwind alpha modifiers keep working:
+  `text-content/60` compiles to `rgb(var(--content-rgb) / 0.6)`.
+
+  The palette is lifted from Flocon's character sheet: its charcoal, her white
+  coat, her ginger markings, her green eyes.
+
+  Shape rule, used everywhere: rectangles are sharp, controls are pills, and
+  anything round is either a target or a face.
+  ---------------------------------------------------------------------------
+*/
+
+:root,
+[data-theme="dark"] {
+  --bg-rgb:        14 16 19;
+  --surface-rgb:   22 25 30;
+  --raised-rgb:    31 35 41;
+  --content-rgb:   241 239 235;
+  --muted-rgb:     158 164 173;
+  /* Fill for buttons and highlights; ink for accent-coloured text. */
+  --accent-rgb:    234 145 64;
+  --accent-ink-rgb: 240 160 86;
+  --on-accent-rgb: 24 17 10;
+  --eye-rgb:       166 184 82;
+  /* Margin notes belong to whoever is not narrating: green for Flocon. */
+  --note-rgb:      166 184 82;
+  --danger-rgb:    248 113 113;
+  --line-rgb:      255 255 255;
+  --line-alpha:    0.09;
+  --line-strong:   0.18;
+  --shadow-rgb:    0 0 0;
+  color-scheme: dark;
 }
 
-/* cursor:none applied only when JS confirms a true mouse device */
-.has-custom-cursor,
-.has-custom-cursor * {
-  cursor: none !important;
+[data-theme="light"] {
+  --bg-rgb:        236 236 234;
+  --surface-rgb:   251 251 250;
+  --raised-rgb:    243 243 241;
+  --content-rgb:   18 20 24;
+  --muted-rgb:     88 94 104;
+  --accent-rgb:    232 136 52;
+  --accent-ink-rgb: 166 80 12;
+  --on-accent-rgb: 24 17 10;
+  --eye-rgb:       118 136 40;
+  --note-rgb:      92 108 24;
+  --danger-rgb:    176 32 32;
+  --line-rgb:      18 20 24;
+  --line-alpha:    0.1;
+  --line-strong:   0.2;
+  --shadow-rgb:    40 44 52;
+  color-scheme: light;
 }
+
+/* Flocon narrating: the accent becomes her eyes, the notes become ginger. */
+html[data-voice="cat"] {
+  --accent-rgb:    166 184 82;
+  --accent-ink-rgb: 184 202 104;
+  --on-accent-rgb: 18 22 8;
+  --note-rgb:      240 160 86;
+}
+html[data-voice="cat"][data-theme="light"] {
+  --accent-rgb:    150 170 62;
+  --accent-ink-rgb: 84 100 18;
+  --note-rgb:      166 80 12;
+}
+
+/*
+  The stage: areas that stay dark in both themes because they sit on a night
+  photograph or a lit range (archery, the footer). Redefining the tokens
+  locally means every utility inside just works.
+*/
+.stage {
+  --bg-rgb:        14 16 19;
+  --surface-rgb:   22 25 30;
+  --raised-rgb:    31 35 41;
+  --content-rgb:   241 239 235;
+  --muted-rgb:     164 170 179;
+  --accent-ink-rgb: 240 160 86;
+  --note-rgb:      166 184 82;
+  --eye-rgb:       166 184 82;
+  --line-rgb:      255 255 255;
+  --line-alpha:    0.1;
+  --line-strong:   0.2;
+  color: rgb(var(--content-rgb));
+  background-color: rgb(var(--bg-rgb));
+  color-scheme: dark;
+}
+html[data-voice="cat"] .stage {
+  --accent-ink-rgb: 184 202 104;
+  --note-rgb:      240 160 86;
+}
+
+/* ── Base ──────────────────────────────────────────────────────────────── */
 
 html {
   scroll-behavior: smooth;
-  background-color: #001619;
+  -webkit-text-size-adjust: 100%;
+  background: rgb(var(--bg-rgb));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
 }
 
 body {
-  background-color: #001619;
-  color: #FFFFFF;
-  font-family: var(--font-langits), var(--font-yapari), system-ui, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  background: rgb(var(--bg-rgb));
+  color: rgb(var(--content-rgb));
+  font-family: var(--font-body), system-ui, sans-serif;
+  font-feature-settings: "ss01", "cv11";
+  overflow-x: clip;
+}
+
+/* Colour transitions only after mount, so first paint is instant. */
+html.theme-ready body,
+html.theme-ready .theme-fade {
+  transition: background-color 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+              color 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+              border-color 0.5s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 ::selection {
-  background: rgba(80, 232, 244, 0.2);
-  color: #C7F8FE;
+  background: rgb(var(--accent-rgb) / 0.85);
+  color: rgb(var(--on-accent-rgb));
 }
 
-::-webkit-scrollbar {
-  width: 3px;
-}
-::-webkit-scrollbar-track {
-  background: #001619;
-}
-::-webkit-scrollbar-thumb {
-  background: rgba(80, 232, 244, 0.4);
-  border-radius: 2px;
+:focus-visible {
+  outline: 2px solid rgb(var(--accent-rgb));
+  outline-offset: 3px;
 }
 
-@layer utilities {
-  .text-gold-gradient {
-    background: linear-gradient(135deg, #50E8F4, #C7F8FE);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+/* ── Type ──────────────────────────────────────────────────────────────── */
+/*
+  One display family (Archivo) used at two widths of its width axis:
+    .mega          62%, heavy, capitals: the poster lines.
+    .font-display  87%: sentence-case headings and large numerals.
+  Body copy is Geist, data is Geist Mono.
+*/
+
+.font-display {
+  font-family: var(--font-display), var(--font-body), sans-serif;
+  font-stretch: 87%;
+  letter-spacing: -0.012em;
+}
+
+.mega {
+  font-family: var(--font-display), var(--font-body), sans-serif;
+  font-weight: 800;
+  font-stretch: 62%;
+  text-transform: uppercase;
+  line-height: 0.86;
+  letter-spacing: 0;
+}
+
+/* The highlighted half of a headline: same family, accent ink. */
+.ink-accent { color: rgb(var(--accent-ink-rgb)); }
+
+/*
+  The face in the O: a round portrait standing in for the letter, as tall as
+  a capital and sitting on the baseline.
+*/
+.face-o {
+  position: relative;
+  display: inline-block;
+  width: 0.68em;
+  height: 0.68em;
+  margin-inline: 0.03em;
+  overflow: hidden;
+  border-radius: 9999px;
+  vertical-align: baseline;
+  background: #23272e;
+}
+
+/* ── Hero ──────────────────────────────────────────────────────────────── */
+/*
+  The headline is sized so its longest line fills the container exactly:
+  100cqw divided by that line's width in em (lib/typeMetrics.ts), capped so
+  every line plus the row beneath still fits one viewport. Phones stack the
+  last line one word per row, so they use their own width and line count.
+
+  --below is the space under the headline (copy, buttons, padding).
+
+  The figure hangs from the header. Below `lg` it stops a little way into
+  the third line with a short fade, so the first lines are dark on the shirt
+  and the rest are light on the page, and the copy underneath stays clear.
+  From `lg` up it runs to the bottom edge and the copy row is kept narrower
+  than the space to its left. --scale shrinks it from the top (Flocon is
+  shorter than Abdullah); --ar is its width over its height.
+
+  .hero-over holds a second copy of the lines in dark ink, masked to the
+  figure's silhouette (--cut) with the same size, position and fade as the
+  figure, so type crossing a white shirt or coat stays readable.
+*/
+.hero-stage {
+  --k: var(--k-m);
+  --lines: var(--lines-m);
+  --below: 12.5rem;
+  --fs: max(2.5rem, min(
+    calc(100cqw / var(--k)),
+    calc((100dvh - 9.5rem - var(--below)) / (var(--lines) * 0.86))
+  ));
+  --ph-full: calc(100dvh - 4.25rem - var(--below) - (var(--lines) - 2.35) * 0.86 * var(--fs));
+  --pr: var(--pr-phone, -9cqw);
+  --fade: 87%;
+  --ph: calc(var(--ph-full) * var(--scale, 1));
+  --pt: calc(4.25rem + var(--ph-full) * (1 - var(--scale, 1)));
+}
+@media (min-width: 640px) {
+  .hero-stage {
+    --k: var(--k-d);
+    --lines: 3;
+    --below: 9.5rem;
+    --fs: max(2.5rem, min(
+      calc(100cqw / var(--k)),
+      calc((100dvh - 6.5rem - var(--below)) / (var(--lines) * 0.86))
+    ));
+    --pr: 0cqw;
   }
-  .border-gold-glow {
-    box-shadow: 0 0 20px rgba(80, 232, 244, 0.15);
+}
+@media (min-width: 1024px) {
+  .hero-stage {
+    --ph-full: calc(100dvh - 4.25rem);
+    --pr: 1cqw;
+    --fade: 92%;
   }
-  .gold-glow-text {
-    text-shadow: 0 0 40px rgba(80, 232, 244, 0.3);
+  .hero-row {
+    max-width: calc(100cqw - var(--ph) * var(--ar, 0.6) - var(--pr) - 1.5rem);
   }
-  .font-after {
-    font-family: var(--font-after), var(--font-space-grotesk), system-ui, sans-serif;
+}
+
+.hero-lines { font-size: var(--fs); }
+.hero-row { height: calc(var(--below) - 1.5rem); }
+
+.hero-portrait {
+  position: absolute;
+  top: var(--pt);
+  right: var(--pr);
+  height: var(--ph);
+  width: auto;
+  max-width: none;
+  -webkit-mask-image: linear-gradient(to bottom, #000 var(--fade), transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 var(--fade), transparent 100%);
+}
+
+.hero-over {
+  -webkit-mask-image: var(--cut), linear-gradient(to bottom, #000 var(--fade), transparent 100%);
+  mask-image: var(--cut), linear-gradient(to bottom, #000 var(--fade), transparent 100%);
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: auto var(--ph), 100% var(--ph);
+  mask-size: auto var(--ph), 100% var(--ph);
+  -webkit-mask-position: right var(--pr) top var(--pt), 0 var(--pt);
+  mask-position: right var(--pr) top var(--pt), 0 var(--pt);
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
+}
+
+/* ── Intro curtain ─────────────────────────────────────────────────────── */
+/*
+  Server-rendered so there is no flash of the page before it. Three exits
+  that need no JavaScript: a returning visitor (data-seen, stamped by the
+  inline head script), reduced motion, and a hard failsafe that removes it
+  after a few seconds whatever happens.
+*/
+#intro {
+  animation: intro-failsafe 0.01s linear 7s forwards;
+}
+html[data-seen] #intro { display: none; }
+@media (prefers-reduced-motion: reduce) {
+  #intro { display: none; }
+}
+@keyframes intro-failsafe { to { visibility: hidden; } }
+
+/* ── Motion helpers ────────────────────────────────────────────────────── */
+
+@keyframes spin-slow { to { transform: rotate(360deg); } }
+.spin-slow { animation: spin-slow 22s linear infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .spin-slow { animation: none; }
+}
+
+/* Grain, fixed and pointer-transparent so it never repaints on scroll. */
+.grain::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+
+/*
+  Paw cursor (mouse and trackpad only; touch is untouched). White paw by
+  default, ginger over anything clickable. The plain url() line is the
+  fallback for browsers without image-set() in cursors. Hotspot sits on the
+  top toe. Text fields keep the text caret.
+*/
+@media (pointer: fine) {
+  html,
+  body {
+    cursor: url("/cursors/paw.png") 12 5, auto;
+    cursor: -webkit-image-set(url("/cursors/paw.png") 1x, url("/cursors/paw@2x.png") 2x) 12 5, auto;
+    cursor: image-set(url("/cursors/paw.png") 1x, url("/cursors/paw@2x.png") 2x) 12 5, auto;
   }
+  a,
+  button,
+  label,
+  select,
+  summary,
+  [role="button"],
+  [role="tab"],
+  [role="switch"],
+  [data-grab],
+  [aria-roledescription="turnaround"] {
+    cursor: url("/cursors/paw-active.png") 12 5, pointer;
+    cursor: -webkit-image-set(url("/cursors/paw-active.png") 1x, url("/cursors/paw-active@2x.png") 2x) 12 5, pointer;
+    cursor: image-set(url("/cursors/paw-active.png") 1x, url("/cursors/paw-active@2x.png") 2x) 12 5, pointer;
+  }
+  input,
+  textarea,
+  [contenteditable="true"] {
+    cursor: text;
+  }
+}
+
+/* The footer target is meant to be shot at: a crosshair beats the paw there. */
+@media (pointer: fine) {
+  .cursor-crosshair { cursor: crosshair; }
+}
+
+/*
+  ---------------------------------------------------------------------------
+  THE QUIET VERSION (parked in drafts/quiet, not built)
+  ---------------------------------------------------------------------------
+  A second take on the same content: a desk at night. It is always dark,
+  whatever theme the main site is in, so it redefines the tokens for its own
+  subtree. Its one accent is Flocon's eye green, which is as close as she
+  gets to appearing.
+
+  Its shape rule is the opposite of the main site's: everything is a rounded
+  window, like the desktop it imitates.
+*/
+.quiet {
+  --bg-rgb:        9 11 10;
+  --surface-rgb:   19 22 20;
+  --raised-rgb:    30 34 31;
+  --content-rgb:   238 240 232;
+  --muted-rgb:     164 171 162;
+  --accent-rgb:    166 184 82;
+  --accent-ink-rgb: 186 204 108;
+  --on-accent-rgb: 18 22 8;
+  --note-rgb:      166 184 82;
+  --danger-rgb:    248 113 113;
+  --line-rgb:      255 255 255;
+  --line-alpha:    0.1;
+  --line-strong:   0.18;
+  min-height: 100dvh;
+  color: rgb(var(--content-rgb));
+  background: rgb(var(--bg-rgb));
+  color-scheme: dark;
+}
+
+/* The display face: a text serif at its largest optical size. */
+.q-serif {
+  font-family: var(--font-serif), Georgia, serif;
+  font-weight: 400;
+  font-optical-sizing: auto;
+  letter-spacing: -0.025em;
+  line-height: 0.95;
+}
+
+/* A window on the desk: frosted, with a hairline edge. */
+.q-window {
+  border-radius: 1.1rem;
+  border: 1px solid rgb(255 255 255 / 0.12);
+  background: rgb(15 18 16 / 0.76);
+  -webkit-backdrop-filter: blur(22px) saturate(140%);
+  backdrop-filter: blur(22px) saturate(140%);
+  box-shadow:
+    0 1px 0 rgb(255 255 255 / 0.06) inset,
+    0 40px 80px -40px rgb(0 0 0 / 0.85);
+}
+@media (prefers-reduced-transparency: reduce) {
+  .q-window { background: rgb(15 18 16); -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
+
+/* The terminal's caret. */
+@keyframes q-caret { 50% { opacity: 0; } }
+.q-caret { animation: q-caret 1.1s steps(1) infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .q-caret { animation: none; }
+}
+
+/* A paw print on the wallpaper: it appears, stays a while, and fades. */
+@keyframes q-print {
+  0%   { opacity: 0; }
+  6%   { opacity: 0.26; }
+  72%  { opacity: 0.26; }
+  100% { opacity: 0; }
+}
+.q-print {
+  position: absolute;
+  opacity: 0;
+  animation: q-print 5.2s ease-out both;
+}
+
+/*
+  ---------------------------------------------------------------------------
+  THE CONSOLE (the home page)
+  ---------------------------------------------------------------------------
+  The portfolio as a game console's home screen. Always dark, whatever theme
+  the main site is in, so it sets the tokens for its own subtree. The accent
+  follows the player: ginger for Abdullah, eye green for Flocon.
+
+  Shape rule here: rounded tiles and cards, pill buttons, round faces.
+*/
+.console {
+  --bg-rgb:        8 9 12;
+  --surface-rgb:   22 24 30;
+  --raised-rgb:    34 37 45;
+  --content-rgb:   243 243 240;
+  --muted-rgb:     172 176 184;
+  --accent-rgb:    234 145 64;
+  --accent-ink-rgb: 244 168 96;
+  --on-accent-rgb: 24 17 10;
+  --eye-rgb:       166 184 82;
+  --note-rgb:      166 184 82;
+  --danger-rgb:    248 113 113;
+  --line-rgb:      255 255 255;
+  --line-alpha:    0.1;
+  --line-strong:   0.2;
+  min-height: 100dvh;
+  color: rgb(var(--content-rgb));
+  background: rgb(var(--bg-rgb));
+  color-scheme: dark;
+}
+html[data-voice="cat"] .console {
+  --accent-rgb:    166 184 82;
+  --accent-ink-rgb: 190 208 112;
+  --on-accent-rgb: 18 22 8;
+}
+
+/* Frosted surfaces: dialogs and toasts, then the cards along the bottom. */
+.c-panel {
+  border-radius: 1.5rem;
+  border: 1px solid rgb(255 255 255 / 0.13);
+  background: rgb(20 22 28 / 0.82);
+  -webkit-backdrop-filter: blur(26px) saturate(150%);
+  backdrop-filter: blur(26px) saturate(150%);
+  box-shadow: 0 40px 90px -30px rgb(0 0 0 / 0.9);
+}
+.c-card {
+  border: 1px solid rgb(255 255 255 / 0.1);
+  background: rgb(26 28 35 / 0.66);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  backdrop-filter: blur(20px) saturate(150%);
+}
+@media (prefers-reduced-transparency: reduce) {
+  .c-panel, .c-card { background: rgb(22 24 30); -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
+
+/* Rows that scroll sideways without showing a scrollbar. */
+.c-noscroll { scrollbar-width: none; }
+.c-noscroll::-webkit-scrollbar { display: none; }
+
+/* Art that sits on the right on wide screens fades in from its left edge. */
+@media (min-width: 1024px) {
+  .c-side {
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 40%);
+    mask-image: linear-gradient(to right, transparent, #000 40%);
+  }
+}
+
+/* The mark on the boot screen, breathing. */
+@keyframes c-pulse { 50% { opacity: 0.45; transform: scale(0.97); } }
+.c-pulse { display: inline-block; animation: c-pulse 2.6s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .c-pulse { animation: none; }
+}
+
+/*
+  A console draws its interface to fit the screen, whatever the screen. On
+  wide viewports the whole home screen is laid out in rem and the root size
+  follows the smaller of the viewport's width and height, so it is the same
+  composition at 1280x720, 1440x820 and 2560x1440, only larger or smaller.
+  Phones keep the normal size and scroll instead.
+*/
+@media (min-width: 1024px) {
+  html:has(.console) {
+    font-size: clamp(13px, min(1.111vw, 1.951vh), 26px);
+  }
+}
+
+/* The console has no cat in it, so no paw: the system pointer. */
+@media (pointer: fine) {
+  html:has(.console),
+  html:has(.console) body {
+    cursor: auto;
+  }
+  .console a,
+  .console button,
+  .console label,
+  .console select,
+  .console [role="button"],
+  .console [role="tab"] {
+    cursor: pointer;
+  }
+  .console input,
+  .console textarea {
+    cursor: text;
+  }
+}
+
+/* The focused tile's art drifts slowly, so the home screen is never still. */
+@keyframes c-kb {
+  from { transform: scale(1) translate3d(0, 0, 0); }
+  to   { transform: scale(1.08) translate3d(-1.5%, -1%, 0); }
+}
+.c-kb { animation: c-kb 26s ease-in-out infinite alternate; }
+
+/*
+  Power on: two rings of light expand from the mark, the mark rises out of
+  the dark with a sheen passing over it, then the prompt fades in and breathes.
+*/
+@keyframes c-ring {
+  0%   { transform: translate(-50%, -50%) scale(0.2); opacity: 0; }
+  20%  { opacity: 0.9; }
+  100% { transform: translate(-50%, -50%) scale(5); opacity: 0; }
+}
+.c-boot-ring {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 12rem;
+  height: 12rem;
+  border-radius: 9999px;
+  border: 1px solid rgb(var(--accent-rgb) / 0.7);
+  box-shadow: 0 0 40px rgb(var(--accent-rgb) / 0.35), inset 0 0 40px rgb(var(--accent-rgb) / 0.25);
+  opacity: 0;
+  animation: c-ring 2.6s cubic-bezier(0.2, 0.7, 0.2, 1) 0.2s infinite;
+  pointer-events: none;
+}
+.c-boot-ring-2 { animation-delay: 1.5s; }
+
+@keyframes c-logo-in {
+  from { opacity: 0; transform: scale(0.86); filter: blur(8px); }
+  to   { opacity: 1; transform: scale(1); filter: blur(0); }
+}
+.c-boot-logo {
+  animation: c-logo-in 1.2s cubic-bezier(0.22, 1, 0.36, 1) both;
+  -webkit-mask-image: linear-gradient(105deg, #000 40%, rgb(0 0 0 / 0.55) 50%, #000 60%);
+  mask-image: linear-gradient(105deg, #000 40%, rgb(0 0 0 / 0.55) 50%, #000 60%);
+  -webkit-mask-size: 300% 100%;
+  mask-size: 300% 100%;
+}
+@keyframes c-sheen { from { -webkit-mask-position: 100% 0; mask-position: 100% 0; } to { -webkit-mask-position: 0 0; mask-position: 0 0; } }
+.c-boot-logo { animation: c-logo-in 1.2s cubic-bezier(0.22, 1, 0.36, 1) both, c-sheen 3.2s ease-in-out 1.2s infinite; }
+
+@keyframes c-text-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes c-breathe { 50% { opacity: 0.45; } }
+.c-boot-text { animation: c-text-in 0.8s ease-out 1s both, c-breathe 2.8s ease-in-out 2s infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .c-kb, .c-boot-ring, .c-boot-logo, .c-boot-text { animation: none; }
+  .c-boot-ring { display: none; }
+}
+
+/*
+  Browsers only draw focus rings after keyboard use, so a controller moving
+  focus inside a dialog left no visible trace. While the pad is in use, every
+  focused control in a dialog gets a clear ring.
+*/
+[data-input="pad"] .c-panel :focus,
+[data-input="pad"] [aria-label="Who is playing?"] :focus {
+  outline: 3px solid rgb(var(--content-rgb));
+  outline-offset: 3px;
+  border-radius: 0.85rem;
+}
+[data-input="pad"] .c-panel input:focus,
+[data-input="pad"] .c-panel textarea:focus,
+[data-input="pad"] .c-panel select:focus {
+  outline-offset: 0;
+}
+
+/* A pair of images, one per theme (the MetaBox logo has a white and a coloured version). */
+[data-theme="light"] .only-dark { display: none; }
+:root:not([data-theme="light"]) .only-light,
+[data-theme="dark"] .only-light { display: none; }
+
+/* The console's standby light, breathing while it waits to be switched on. */
+@keyframes c-standby { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+.c-standby { animation: c-standby 2.6s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .c-standby { animation: none; }
 }

@@ -1,36 +1,24 @@
-import Hero from "@/components/sections/Hero";
-import About from "@/components/sections/About";
-import Process from "@/components/sections/Process";
-import Skills from "@/components/sections/Skills";
-import Archery from "@/components/sections/Archery";
-import Contact from "@/components/sections/Contact";
+import ConsoleApp from "@/components/console/ConsoleApp";
 import { SiteProvider } from "@/context/SiteContext";
-import { defaultContent } from "@/lib/defaultContent";
-import type { ContentData } from "@/lib/defaultContent";
-import { getPayload } from "payload";
-import config from "@payload-config";
+import { getContent } from "@/lib/getContent";
 
-async function getContent(): Promise<ContentData> {
-  try {
-    const payload = await getPayload({ config });
-    const global = await payload.findGlobal({ slug: "site-content" });
-    return (global.data as ContentData) ?? defaultContent;
-  } catch {
-    return defaultContent;
-  }
-}
-
+/**
+ * The home page is the console: the portfolio staged as a game console's home
+ * screen. It powers on, asks who is playing, then shows tiles along the top,
+ * the focused one filling the screen, its cards underneath. A keyboard, a
+ * mouse, touch or a real gamepad drives it.
+ *
+ * The two other versions (the poster site and the quiet desktop) are parked
+ * in drafts/ and not built.
+ */
 export default async function Home() {
   const content = await getContent();
 
   return (
     <SiteProvider initialContent={content}>
-      <Hero />
-      <About />
-      <Process />
-      <Skills />
-      <Archery />
-      <Contact />
+      <div className="console">
+        <ConsoleApp />
+      </div>
     </SiteProvider>
   );
 }
